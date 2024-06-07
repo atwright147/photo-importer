@@ -1,6 +1,19 @@
 import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/tauri";
+import {
+  allSysInfo,
+  memoryInfo,
+  staticInfo,
+  cpuInfo,
+  AllSystemInfo,
+  StaticInfo,
+  MemoryInfo,
+  CpuInfo,
+  batteries,
+  Batteries,
+} from "tauri-plugin-system-info-api";
+
 import "./App.css";
 
 function App() {
@@ -10,6 +23,22 @@ function App() {
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     setGreetMsg(await invoke("greet", { name }));
+  }
+
+  async function getSysInfo() {
+    try {
+      console.info(AllSystemInfo.parse(await allSysInfo()));
+    } catch (err) {
+      console.info(err);
+    }
+    // console.info(MemoryInfo.parse(await memoryInfo()));
+    // console.info(StaticInfo.parse(await staticInfo()));
+    // console.info(CpuInfo.parse(await cpuInfo()));
+    // console.info(Batteries.parse(await batteries()));
+  }
+
+  function log() {
+    console.info("hello");
   }
 
   return (
@@ -44,6 +73,11 @@ function App() {
         />
         <button type="submit">Greet</button>
       </form>
+
+      <br/>
+      <button type="button" onClick={getSysInfo}>Get System Info</button>
+      <br />
+      <button type="button" onClick={log}>Log</button>
 
       <p>{greetMsg}</p>
     </div>
