@@ -1,85 +1,74 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/tauri";
+import { useEffect, useMemo, useState } from "react";
+import Select from 'react-select';
+
 import {
-  allSysInfo,
-  memoryInfo,
-  staticInfo,
-  cpuInfo,
   AllSystemInfo,
-  StaticInfo,
-  MemoryInfo,
-  CpuInfo,
-  batteries,
-  Batteries,
+  allSysInfo,
+} from "tauri-plugin-system-info-api";
+import type {
+  Disk,
 } from "tauri-plugin-system-info-api";
 
 import "./App.css";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [disk, setDisk] = useState("");
+  const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const options = useMemo(() => removableDisks.map((disk) => ({ value: disk.device, label: disk.device })), [removableDisks]);
 
-  async function getSysInfo() {
+  useEffect(() => {
+    (async () => {
+      const disks = await getRemovableDisks();
+      console.info(disks);
+      const removableDisks = disks.filter((disk) => disk.is_removable);
+      setRemovableDisks(removableDisks);
+    })();
+  }, []);
+
+  const getRemovableDisks = async (): Promise<Disk[]> => {
+    console.info("getRemovableDisks");
     try {
-      console.info(AllSystemInfo.parse(await allSysInfo()));
+      return AllSystemInfo.parse(await allSysInfo()).disks;
     } catch (err) {
       console.info(err);
+      return Promise.reject([]);
     }
-    // console.info(MemoryInfo.parse(await memoryInfo()));
-    // console.info(StaticInfo.parse(await staticInfo()));
-    // console.info(CpuInfo.parse(await cpuInfo()));
-    // console.info(Batteries.parse(await batteries()));
   }
 
-  function log() {
-    console.info("hello");
-  }
+  const handleFocus = async () => {
+    const disks = await getRemovableDisks();
+    console.info(disks);
+    setRemovableDisks(disks.filter((disk) => disk.is_removable));
+  };
 
   return (
     <div className="container">
-      <h1>Welcome to Tauri!</h1>
+      <h1>Photo Importer</h1>
 
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+      <button type="button" onClick={async () => await getRemovableDisks()}>Get Disks</button>
 
       <form
         className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
+        onSubmit={(event) => {
+          event.preventDefault();
         }}
       >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+        <Select
+          name="disks"
+          id="disks"
+          onFocus={(event) => {
+            console.info('focus', event);
+            handleFocus();
+          }}
+          // onChange={(event) => setDisk(event.currentTarget.value)}
+          options={options}
         />
-        <button type="submit">Greet</button>
       </form>
 
-      <br/>
-      <button type="button" onClick={getSysInfo}>Get System Info</button>
-      <br />
-      <button type="button" onClick={log}>Log</button>
-
-      <p>{greetMsg}</p>
+      <pre>
+        {JSON.stringify({ disk, removableDisks }, null, 2)}
+      </pre>
     </div>
   );
 }
