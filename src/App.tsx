@@ -10,7 +10,7 @@ function App() {
   const [disk, setDisk] = useState('');
   const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
 
-  const options = useMemo(() => removableDisks.map((disk) => ({ value: disk.device, label: disk.device })), [removableDisks]);
+  const options = useMemo(() => removableDisks.map((disk) => ({ value: disk.mount_point, label: disk.name })), [removableDisks]);
 
   useEffect(() => {
     (async () => {
@@ -54,7 +54,9 @@ function App() {
           onFocus={() => {
             handleFocus();
           }}
-          // onChange={(event) => setDisk(event.currentTarget.value)}
+          onChange={(newValue) => {
+            setDisk(newValue?.value);
+          }}
           options={options}
         />
       </form>
