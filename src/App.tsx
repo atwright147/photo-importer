@@ -20,14 +20,12 @@ function App() {
   useEffect(() => {
     (async () => {
       const disks = await getRemovableDisks();
-      console.info(disks);
       const removableDisks = disks.filter((disk) => disk.is_removable);
       setRemovableDisks(removableDisks);
     })();
   }, []);
 
   const getRemovableDisks = async (): Promise<Disk[]> => {
-    console.info("getRemovableDisks");
     try {
       return AllSystemInfo.parse(await allSysInfo()).disks;
     } catch (err) {
@@ -38,7 +36,6 @@ function App() {
 
   const handleFocus = async () => {
     const disks = await getRemovableDisks();
-    console.info(disks);
     setRemovableDisks(disks.filter((disk) => disk.is_removable));
   };
 
@@ -57,8 +54,7 @@ function App() {
         <Select
           name="disks"
           id="disks"
-          onFocus={(event) => {
-            console.info('focus', event);
+          onFocus={() => {
             handleFocus();
           }}
           // onChange={(event) => setDisk(event.currentTarget.value)}
