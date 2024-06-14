@@ -10,6 +10,14 @@ struct FileInfo {
     size: Option<u64>,
 }
 
+fn is_hidden(entry: &walkdir::DirEntry) -> bool {
+  entry
+      .path()
+      .file_name()
+      .and_then(|file_name| file_name.to_str().map(|s| s.starts_with('.')))
+      .unwrap_or(false)
+}
+
 #[tauri::command]
 fn list_files(drive_path: String) -> Result<Vec<FileInfo>, String> {
   println!("Received drive path: {}", drive_path);
@@ -21,7 +29,13 @@ fn list_files(drive_path: String) -> Result<Vec<FileInfo>, String> {
 
   let mut files = Vec::new();
   // Iterate over entries in the provided drive_path
-  for entry in walkdir::WalkDir::new(drive_path).into_iter().filter_map(|e| e.ok()) {
+  for entry in walkdir::WalkDir::new(drive_path)
+    .into_iter()
+    .filter_map(|e| e.ok())
+    .into_iter()
+    .filter(|e| !is_hidden(e))
+    .filter(|e| !e.file_type().is_dir())
+  {
     let metadata = entry.metadata().map_err(|err| err.to_string())?;
 
     files.push(FileInfo {
