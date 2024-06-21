@@ -55,11 +55,25 @@ fn extract_thumbnail(path: &Path) -> String {
   let path_str = path.to_str().expect("Invalid path");
   println!("Received drive path: {}", path_str);
 
+  let thumbnail_dir = "/Users/andy/Desktop/thumbnails/";
+
+  // Ensure the directory exists
+  if !Path::new(thumbnail_dir).exists() {
+    match std::fs::create_dir_all(thumbnail_dir) {
+      Ok(_) => println!("Created thumbnail directory: {}", thumbnail_dir),
+      Err(e) => return format!("Failed to create thumbnail directory: {}", e),
+    }
+  }
+
   // Define the thumbnail path
   let thumbnail_path = format!(
-    "/Users/andy/Desktop/thumbnails/{}_thumb.jpg",
+    "{}{}_thumb.jpg",
+    thumbnail_dir,
     path.file_stem().expect("Invalid file name").to_str().expect("Invalid file name")
   );
+
+  // Print the constructed thumbnail path
+  println!("Thumbnail will be saved to: {}", thumbnail_path);
 
   // Check if the thumbnail already exists
   if Path::new(&thumbnail_path).exists() {
@@ -67,9 +81,22 @@ fn extract_thumbnail(path: &Path) -> String {
   }
 
   let output = Command::new("exiftool")
-    .args(&["-thumbnailimage", "-b", "-w", &thumbnail_path, path_str])
+    .args(&[
+      "-thumbnailimage",
+      "-b",
+      "-w",
+      "/Users/andy/Desktop/thumbnails/%f_thumb.jpg",
+      path_str,
+    ])
+    .current_dir(thumbnail_dir) // Set the working directory to the thumbnail directory
     .output()
     .expect("failed to execute process");
+
+  // Print the output status and any stderr output
+  println!("Exiftool output status: {}", output.status);
+  if !output.status.success() {
+    println!("Exiftool error: {}", String::from_utf8_lossy(&output.stderr));
+  }
 
   if output.status.success() {
     format!("Thumbnail extracted for: {}", path_str)
