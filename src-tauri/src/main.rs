@@ -7,17 +7,17 @@ use std::process::Command;
 
 #[derive(Serialize)]
 struct FileInfo {
-    path: String,
-    is_file: bool,
-    size: Option<u64>,
+  path: String,
+  is_file: bool,
+  size: Option<u64>,
 }
 
 fn is_hidden(entry: &walkdir::DirEntry) -> bool {
   entry
-      .path()
-      .file_name()
-      .and_then(|file_name| file_name.to_str().map(|s| s.starts_with('.')))
-      .unwrap_or(false)
+    .path()
+    .file_name()
+    .and_then(|file_name| file_name.to_str().map(|s| s.starts_with('.')))
+    .unwrap_or(false)
 }
 
 #[tauri::command]
@@ -56,16 +56,23 @@ fn extract_thumbnail(path: &Path) -> String {
   println!("Received drive path: {}", path_str);
 
   let output = Command::new("exiftool")
-      .args(&["-thumbnailimage", "-b", "-w", "/Users/andy/Desktop/thumbnails/%f_thumb.jpg", path_str])
-      .output()
-      .expect("failed to execute process");
+    .args(&[
+      "-thumbnailimage",
+      "-b",
+      "-w",
+      "/Users/andy/Desktop/thumbnails/%f_thumb.jpg",
+      path_str,
+    ])
+    .output()
+    .expect("failed to execute process");
 
   if output.status.success() {
-      format!("Thumbnail extracted for: {}", path_str)
+    format!("Thumbnail extracted for: {}", path_str)
   } else {
-      format!("Failed to extract thumbnail: {}", String::from_utf8_lossy(&output.stderr))
+    format!("Failed to extract thumbnail: {}", String::from_utf8_lossy(&output.stderr))
   }
 }
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
