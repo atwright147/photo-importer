@@ -55,14 +55,19 @@ fn extract_thumbnail(path: &Path) -> String {
   let path_str = path.to_str().expect("Invalid path");
   println!("Received drive path: {}", path_str);
 
+  // Define the thumbnail path
+  let thumbnail_path = format!(
+    "/Users/andy/Desktop/thumbnails/{}_thumb.jpg",
+    path.file_stem().expect("Invalid file name").to_str().expect("Invalid file name")
+  );
+
+  // Check if the thumbnail already exists
+  if Path::new(&thumbnail_path).exists() {
+    return format!("Thumbnail already exists for: {}", path_str);
+  }
+
   let output = Command::new("exiftool")
-    .args(&[
-      "-thumbnailimage",
-      "-b",
-      "-w",
-      "/Users/andy/Desktop/thumbnails/%f_thumb.jpg",
-      path_str,
-    ])
+    .args(&["-thumbnailimage", "-b", "-w", &thumbnail_path, path_str])
     .output()
     .expect("failed to execute process");
 
