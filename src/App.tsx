@@ -17,6 +17,7 @@ function App() {
   const [disk, setDisk] = useState('');
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
+  const [extractedThumbnails, setExtractedThumbnails] = useState<string[]>([]);
 
   const options = useMemo(() => removableDisks.map((disk) => ({ value: disk.mount_point, label: disk.name })), [removableDisks]);
 
@@ -24,20 +25,23 @@ function App() {
     (async () => {
       const disks = await getRemovableDisks();
       const removableDisks = disks; //.filter((disk) => disk.is_removable);
-      // const removableDisks = disks;
       setRemovableDisks(removableDisks);
     })();
   }, []);
 
-  // useEffect(() => {
-  //   (async () => {
-  //     if (disk) {
-  //       const files = await readDir(disk);
-  //       setFiles(files);
-  //       console.log(files);
-  //     }
-  //   })();
-  // }, [disk]);
+  useEffect(() => {
+    (async () => {
+      const promises: Promise<void>[] = [];
+      for (const file of files) {
+        promises.push(invoke('extract_thumbnail', { path: file.path }));
+      }
+      const results = await Promise.allSettled(promises);
+
+      console.info(results);
+
+      // setExtractedThumbnails(results.map((result) => result.status === 'fulfilled' ? result.value : ''));
+    })();
+  }, [files]);
 
   useEffect(() => {
     (async () => {
@@ -93,7 +97,18 @@ function App() {
         />
       </form>
 
-      <pre>{JSON.stringify({ disk, removableDisks, options, files }, null, 2)}</pre>
+      <ul>
+        {files.map((file) => (
+          <li key={file.path}>
+            <div>{file.path}</div>
+          </li>
+        ))}
+      </ul>
+
+      <details>
+        <summary>Debug</summary>
+        <pre>{JSON.stringify({ disk, removableDisks, options, files }, null, 2)}</pre>
+      </details>
     </div>
   );
 }

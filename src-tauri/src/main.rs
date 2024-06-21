@@ -2,6 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::Serialize;
+use std::path::Path;
+use std::process::Command;
 
 #[derive(Serialize)]
 struct FileInfo {
@@ -48,6 +50,22 @@ fn list_files(drive_path: String) -> Result<Vec<FileInfo>, String> {
   Ok(files)
 }
 
+#[tauri::command]
+fn extract_thumbnail(path: &Path) -> String {
+  let path_str = path.to_str().expect("Invalid path");
+  println!("Received drive path: {}", path_str);
+
+  let output = Command::new("exiftool")
+      .args(&["-thumbnailimage", "-b", "-w", "/Users/andy/Desktop/thumbnails/%f_thumb.jpg", path_str])
+      .output()
+      .expect("failed to execute process");
+
+  if output.status.success() {
+      format!("Thumbnail extracted for: {}", path_str)
+  } else {
+      format!("Failed to extract thumbnail: {}", String::from_utf8_lossy(&output.stderr))
+  }
+}
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -56,7 +74,7 @@ fn greet(name: &str) -> String {
 
 fn main() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![list_files, greet])
+    .invoke_handler(tauri::generate_handler![extract_thumbnail, list_files, greet])
     .plugin(tauri_plugin_system_info::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
