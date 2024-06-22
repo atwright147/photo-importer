@@ -1,11 +1,12 @@
+import { invoke } from '@tauri-apps/api';
 import type { FileEntry } from '@tauri-apps/api/fs';
+import { convertFileSrc } from '@tauri-apps/api/tauri';
 import { useEffect, useMemo, useState } from 'react';
 import Select from 'react-select';
 import { AllSystemInfo, allSysInfo } from 'tauri-plugin-system-info-api';
 import type { Disk } from 'tauri-plugin-system-info-api';
 
 import './App.css';
-import { invoke } from '@tauri-apps/api';
 
 type FileInfo = {
   path: string;
@@ -31,15 +32,15 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      const promises: Promise<void>[] = [];
+      const promises: Promise<string>[] = [];
       for (const file of files) {
-        promises.push(invoke('extract_thumbnail', { path: file.path }));
+        promises.push(invoke<string>('extract_thumbnail', { path: file.path }));
       }
       const results = await Promise.allSettled(promises);
 
-      console.info(results);
+      console.info('results', results);
 
-      // setExtractedThumbnails(results.map((result) => result.status === 'fulfilled' ? result.value : ''));
+      setExtractedThumbnails(results.map((result) => (result.status === 'fulfilled' ? result.value : '')));
     })();
   }, [files]);
 
@@ -98,8 +99,9 @@ function App() {
       </form>
 
       <ul>
-        {files.map((file) => (
+        {files.map((file, index) => (
           <li key={file.path}>
+            <img src={convertFileSrc(extractedThumbnails[index])} alt="" />
             <div>{file.path}</div>
           </li>
         ))}
@@ -107,7 +109,7 @@ function App() {
 
       <details>
         <summary>Debug</summary>
-        <pre>{JSON.stringify({ disk, removableDisks, options, files }, null, 2)}</pre>
+        <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails }, null, 2)}</pre>
       </details>
     </div>
   );

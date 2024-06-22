@@ -5,6 +5,13 @@ use serde::Serialize;
 use std::path::Path;
 use std::process::Command;
 
+// https://en.wikipedia.org/wiki/Raw_image_format#Raw_filename_extensions_and_respective_camera_manufacturers_or_standard
+static ALLOWED_EXTENSIONS: &[&str] = &[
+  "3fr", "ari", "arw", "srf", "sr2", "bay", "braw", "cri", "crw", "cr2", "cr3", "cap", "iiq", "eip", "dcs", "dcr", "drf", "k25", "kdc",
+  "dng", "erf", "fff", "gpr", "jxs", "mef", "mdc", "mos", "mrw", "nef", "nrw", "orf", "pef", "ptx", "pxn", "R3D", "raf", "raw", "rw2",
+  "raw", "rwl", "dng", "rwz", "srw", "tco", "x3f",
+];
+
 #[derive(Serialize)]
 struct FileInfo {
   path: String,
@@ -18,6 +25,13 @@ fn is_hidden(entry: &walkdir::DirEntry) -> bool {
     .file_name()
     .and_then(|file_name| file_name.to_str().map(|s| s.starts_with('.')))
     .unwrap_or(false)
+}
+
+// function to check if file extension is in a list of allowed extensions
+fn is_allowed_extension(file_path: &str, allowed_extensions: &[&str]) -> bool {
+  let file_extension = Path::new(file_path).extension().and_then(|ext| ext.to_str()).unwrap_or("");
+  println!("File extension: {}", file_extension);
+  allowed_extensions.contains(&file_extension.to_lowercase().as_str())
 }
 
 #[tauri::command]
@@ -37,6 +51,7 @@ fn list_files(drive_path: String) -> Result<Vec<FileInfo>, String> {
     .into_iter()
     .filter(|e| !is_hidden(e))
     .filter(|e| !e.file_type().is_dir())
+    .filter(|e| is_allowed_extension(&e.path().display().to_string(), ALLOWED_EXTENSIONS))
   {
     let metadata = entry.metadata().map_err(|err| err.to_string())?;
 
@@ -77,7 +92,8 @@ fn extract_thumbnail(path: &Path) -> String {
 
   // Check if the thumbnail already exists
   if Path::new(&thumbnail_path).exists() {
-    return format!("Thumbnail already exists for: {}", path_str);
+    println!("Thumbnail already exists, skipping creation: {}", thumbnail_path);
+    return format!("{}", &thumbnail_path);
   }
 
   let output = Command::new("exiftool")
@@ -99,7 +115,7 @@ fn extract_thumbnail(path: &Path) -> String {
   }
 
   if output.status.success() {
-    format!("Thumbnail extracted for: {}", path_str)
+    format!("{}", &thumbnail_path)
   } else {
     format!("Failed to extract thumbnail: {}", String::from_utf8_lossy(&output.stderr))
   }

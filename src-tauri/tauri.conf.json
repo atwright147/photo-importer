@@ -16,6 +16,11 @@
         "all": false,
         "open": true
       },
+      "protocol": {
+        "all": true,
+        "asset": true,
+        "assetScope": ["**/*"]
+      },
       "fs": {
         "readDir": true,
         "scope": ["**"]
@@ -32,7 +37,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost"
     },
     "bundle": {
       "active": true,
