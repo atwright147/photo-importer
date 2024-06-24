@@ -1,18 +1,16 @@
+import { Grid, Heading, Item, Picker, Provider, Text, View, defaultTheme } from '@adobe/react-spectrum';
 import { invoke } from '@tauri-apps/api';
 import type { FileEntry } from '@tauri-apps/api/fs';
-import { convertFileSrc } from '@tauri-apps/api/tauri';
 import { useEffect, useMemo, useState } from 'react';
 import Select from 'react-select';
 import { AllSystemInfo, allSysInfo } from 'tauri-plugin-system-info-api';
 import type { Disk } from 'tauri-plugin-system-info-api';
+import { SlideList } from './components/SlideList/SlideList';
+import type { FileInfo } from './types/File';
 
 import './App.css';
-
-type FileInfo = {
-  path: string;
-  is_file: boolean;
-  size?: number;
-};
+import { OptionsForm } from './components/OptionsForm/OptionsForm';
+import { Fieldset } from './components/form/Fieldset/Fieldset';
 
 function App() {
   const [disk, setDisk] = useState('');
@@ -20,7 +18,7 @@ function App() {
   const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
   const [extractedThumbnails, setExtractedThumbnails] = useState<string[]>([]);
 
-  const options = useMemo(() => removableDisks.map((disk) => ({ value: disk.mount_point, label: disk.name })), [removableDisks]);
+  const options = useMemo(() => removableDisks.map((disk) => ({ id: disk.mount_point, name: disk.name })), [removableDisks]);
 
   useEffect(() => {
     (async () => {
@@ -72,46 +70,52 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <h1>Photo Importer</h1>
-
-      <button type="button" onClick={async () => await getRemovableDisks()}>
-        Get Disks
-      </button>
-
-      <form
-        className="row"
-        onSubmit={(event) => {
-          event.preventDefault();
-        }}
-      >
-        <Select
-          name="disks"
-          id="disks"
-          onFocus={() => {
-            handleFocus();
-          }}
-          onChange={(newValue) => {
-            setDisk(newValue?.value);
-          }}
-          options={options}
-        />
-      </form>
-
-      <ul>
-        {files.map((file, index) => (
-          <li key={file.path}>
-            <img src={convertFileSrc(extractedThumbnails[index])} alt="" />
-            <div>{file.path}</div>
-          </li>
-        ))}
-      </ul>
-
-      <details>
-        <summary>Debug</summary>
-        <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails }, null, 2)}</pre>
-      </details>
-    </div>
+    <Provider theme={defaultTheme} height="100%">
+      <View padding="size-200" height="100%">
+        <Grid
+          areas={['content sidebar', 'footer  footer']}
+          columns={['3fr', '1fr']}
+          rows={['auto', 'min-content']}
+          height="100%"
+          gap="size-300"
+        >
+          <View gridArea="content">
+            <form
+              className="row"
+              onSubmit={(event) => {
+                event.preventDefault();
+              }}
+            >
+              <Fieldset>
+                <legend>Drive</legend>
+                <Picker
+                  label="Source Disk"
+                  name="sourceDisk"
+                  items={options}
+                  onSelectionChange={(value) => setDisk(String(value))}
+                  onFocus={handleFocus}
+                  isRequired
+                  width="100%"
+                >
+                  {(item) => <Item>{item.name}</Item>}
+                </Picker>
+              </Fieldset>
+            </form>
+            <SlideList files={files} extractedThumbnails={extractedThumbnails} />
+            <details>
+              <summary>Debug</summary>
+              <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails }, null, 2)}</pre>
+            </details>
+          </View>
+          <View gridArea="sidebar" elementType="aside" padding="5px">
+            <OptionsForm />
+          </View>
+          <View gridArea="footer" elementType="footer">
+            <Text>Selected: n</Text>
+          </View>
+        </Grid>
+      </View>
+    </Provider>
   );
 }
 
