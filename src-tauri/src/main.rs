@@ -4,6 +4,7 @@
 use serde::Serialize;
 use std::path::Path;
 use std::process::Command;
+use webbrowser;
 
 // https://en.wikipedia.org/wiki/Raw_image_format#Raw_filename_extensions_and_respective_camera_manufacturers_or_standard
 static ALLOWED_EXTENSIONS: &[&str] = &[
@@ -121,6 +122,14 @@ fn extract_thumbnail(path: &Path) -> String {
   }
 }
 
+#[tauri::command]
+fn open_url(url: &str) -> Result<(), String> {
+  match webbrowser::open(url) {
+    Ok(_) => Ok(()),
+    Err(e) => Err(e.to_string()),
+  }
+}
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -129,7 +138,7 @@ fn greet(name: &str) -> String {
 
 fn main() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![extract_thumbnail, list_files, greet])
+    .invoke_handler(tauri::generate_handler![extract_thumbnail, list_files, greet, open_url])
     .plugin(tauri_plugin_system_info::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

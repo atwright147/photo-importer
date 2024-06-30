@@ -1,8 +1,7 @@
-import { Grid, Heading, Item, Picker, Provider, Text, View, defaultTheme } from '@adobe/react-spectrum';
+import { Button, Flex, Grid, Item, Picker, Provider, Text, View, defaultTheme } from '@adobe/react-spectrum';
 import { invoke } from '@tauri-apps/api';
 import type { FileEntry } from '@tauri-apps/api/fs';
 import { useEffect, useMemo, useState } from 'react';
-import Select from 'react-select';
 import { AllSystemInfo, allSysInfo } from 'tauri-plugin-system-info-api';
 import type { Disk } from 'tauri-plugin-system-info-api';
 import { SlideList } from './components/SlideList/SlideList';
@@ -43,6 +42,8 @@ function App() {
   }, [files]);
 
   useEffect(() => {
+    if (!disk) return;
+
     (async () => {
       try {
         const result: FileInfo[] = await invoke('list_files', { drivePath: disk });
@@ -71,50 +72,61 @@ function App() {
 
   return (
     <Provider theme={defaultTheme} height="100%">
-      <View padding="size-200" height="100%">
-        <Grid
-          areas={['content sidebar', 'footer  footer']}
-          columns={['3fr', '1fr']}
-          rows={['auto', 'min-content']}
-          height="100%"
-          gap="size-300"
-        >
-          <View gridArea="content">
-            <form
-              className="row"
-              onSubmit={(event) => {
-                event.preventDefault();
-              }}
-            >
-              <Fieldset>
-                <legend>Drive</legend>
-                <Picker
-                  label="Source Disk"
-                  name="sourceDisk"
-                  items={options}
-                  onSelectionChange={(value) => setDisk(String(value))}
-                  onFocus={handleFocus}
-                  isRequired
-                  width="100%"
-                >
-                  {(item) => <Item>{item.name}</Item>}
-                </Picker>
-              </Fieldset>
-            </form>
-            <SlideList files={files} extractedThumbnails={extractedThumbnails} />
-            <details>
-              <summary>Debug</summary>
-              <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails }, null, 2)}</pre>
-            </details>
-          </View>
-          <View gridArea="sidebar" elementType="aside" padding="5px">
-            <OptionsForm />
-          </View>
-          <View gridArea="footer" elementType="footer">
-            <Text>Selected: n</Text>
-          </View>
-        </Grid>
-      </View>
+      <Grid
+        UNSAFE_style={{ padding: '16px', boxSizing: 'border-box' }}
+        areas={['content sidebar', 'footer  footer']}
+        columns={['3fr', '1fr']}
+        rows={['auto', 'min-content']}
+        height="100%"
+        gap="size-300"
+      >
+        <View gridArea="content">
+          <form
+            className="row"
+            onSubmit={(event) => {
+              event.preventDefault();
+            }}
+          >
+            <Fieldset>
+              <legend>Drive</legend>
+              <Picker
+                label="Source Disk"
+                name="sourceDisk"
+                items={options}
+                onSelectionChange={(value) => setDisk(String(value))}
+                onFocus={handleFocus}
+                isRequired
+                width="100%"
+              >
+                {(item) => <Item>{item.name}</Item>}
+              </Picker>
+            </Fieldset>
+          </form>
+          <SlideList files={files} extractedThumbnails={extractedThumbnails} />
+          <details>
+            <summary>Debug</summary>
+            <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails }, null, 2)}</pre>
+          </details>
+        </View>
+        <View gridArea="sidebar" elementType="aside" padding="5px">
+          <OptionsForm />
+        </View>
+        <View gridArea="footer" elementType="footer">
+          <Flex alignItems="center" justifyContent="space-between">
+            <View>
+              <Text>Selected: n</Text>
+            </View>
+            <Flex gap="size-100">
+              <Button variant="primary" type="button">
+                Cancel
+              </Button>
+              <Button variant="cta" type="button">
+                Import
+              </Button>
+            </Flex>
+          </Flex>
+        </View>
+      </Grid>
     </Provider>
   );
 }
