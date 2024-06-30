@@ -3,7 +3,7 @@ import { DevTool } from '@hookform/devtools';
 import { invoke } from '@tauri-apps/api';
 import { open } from '@tauri-apps/api/dialog';
 import { pictureDir } from '@tauri-apps/api/path';
-import { type FC, useEffect, useState } from 'react';
+import { type FC, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Fieldset } from '../form/Fieldset/Fieldset';
 
@@ -28,15 +28,6 @@ export const OptionsForm: FC = (): JSX.Element => {
       deleteOriginal: false,
     }),
   });
-
-  useEffect(() => {
-    console.info('OptionsForm');
-    (async () => {
-      // TODO: pull these from localStorage or something
-      const location = await pictureDir();
-      setValue('location', location);
-    })();
-  }, [setValue]);
 
   // @ts-ignore
   const onSubmit = (data) => {
