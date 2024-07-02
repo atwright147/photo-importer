@@ -71,13 +71,13 @@ function App() {
   };
 
   return (
-    <Provider theme={defaultTheme} height="100%">
+    <Provider theme={defaultTheme} minHeight="100vh">
       <Grid
         UNSAFE_style={{ padding: '16px', boxSizing: 'border-box' }}
         areas={['content sidebar', 'footer  footer']}
-        columns={['3fr', '1fr']}
+        columns={['1fr', '310px']}
         rows={['auto', 'min-content']}
-        height="100%"
+        minHeight="100vh"
         gap="size-300"
       >
         <View gridArea="content">
