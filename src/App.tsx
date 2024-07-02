@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AllSystemInfo, allSysInfo } from 'tauri-plugin-system-info-api';
 import type { Disk } from 'tauri-plugin-system-info-api';
 import { SlideList } from './components/SlideList/SlideList';
+import { usePhotosStore } from './stores/photos.store';
 import type { FileInfo } from './types/File';
 
 import './App.css';
@@ -16,6 +17,7 @@ function App() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
   const [extractedThumbnails, setExtractedThumbnails] = useState<string[]>([]);
+  const selected = usePhotosStore((state) => state.selected);
 
   const options = useMemo(() => removableDisks.map((disk) => ({ id: disk.mount_point, name: disk.name })), [removableDisks]);
 
@@ -105,7 +107,7 @@ function App() {
           <SlideList files={files} extractedThumbnails={extractedThumbnails} />
           <details>
             <summary>Debug</summary>
-            <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails }, null, 2)}</pre>
+            <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails, selected }, null, 2)}</pre>
           </details>
         </View>
         <View gridArea="sidebar" elementType="aside" padding="5px">

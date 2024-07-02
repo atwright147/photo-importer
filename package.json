@@ -16,7 +16,8 @@
     "react-aria-components": "^1.2.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.52.0",
-    "tauri-plugin-system-info-api": "^1.0.0"
+    "tauri-plugin-system-info-api": "^1.0.0",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.0",
