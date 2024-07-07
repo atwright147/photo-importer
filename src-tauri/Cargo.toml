@@ -11,7 +11,8 @@ edition = "2021"
 tauri-build = { version = "1", features = [] }
 
 [dependencies]
-tauri = { version = "1", features = [ "dialog-open", "protocol-all", "path-all", "fs-read-dir", "shell-open"] }
+chrono = "0.4"
+tauri = { version = "1", features = [ "process-exit", "dialog-open", "protocol-all", "path-all", "fs-read-dir", "shell-open"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-system-info = "1"

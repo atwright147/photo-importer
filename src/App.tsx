@@ -72,6 +72,14 @@ function App() {
     setRemovableDisks(removableDisks);
   };
 
+  const handleClose = async (): Promise<void> => {
+    try {
+      await process.exit(0);
+    } catch (err) {
+      console.info(err);
+    }
+  };
+
   return (
     <Provider theme={defaultTheme} minHeight="100vh">
       <Grid
@@ -119,8 +127,8 @@ function App() {
               <Text>Selected: n</Text>
             </View>
             <Flex gap="size-100">
-              <Button variant="primary" type="button">
-                Cancel
+              <Button variant="primary" type="button" onPress={handleClose}>
+                Quit
               </Button>
               <Button variant="cta" type="button">
                 Import
