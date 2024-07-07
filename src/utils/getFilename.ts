@@ -1,1 +1,1 @@
-export const getFilename = (path: string): string => path.split('/').pop() ?? '';
+export const getFilename = (path: string): string => path?.split('/').pop() ?? '';

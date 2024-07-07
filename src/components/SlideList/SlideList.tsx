@@ -1,20 +1,19 @@
-import type { FileEntry } from '@tauri-apps/api/fs';
 import type { FC } from 'react';
+import type { ExtractedThumbnails } from '../../types/ExtractedThumbnail';
 import { getFilename } from '../../utils/getFilename';
 import { Slide } from '../Slide/Slide';
 import styles from './SlideList.module.scss';
 
 interface Props {
-  files: FileEntry[];
-  extractedThumbnails: string[];
+  extractedThumbnails: ExtractedThumbnails[];
 }
 
-export const SlideList: FC<Props> = ({ files, extractedThumbnails }): JSX.Element => {
+export const SlideList: FC<Props> = ({ extractedThumbnails }): JSX.Element => {
   return (
     <ul className={styles.slideList}>
-      {files.map((file, index) => (
-        <li key={file.path} className={styles.listItem}>
-          <Slide src={extractedThumbnails[index]} alt="" title={getFilename(file.path)} />
+      {extractedThumbnails.map((file) => (
+        <li key={file.original_path} className={styles.listItem}>
+          <Slide thumb={file.thumbnail_path} original={file.original_path} alt="" title={getFilename(file.original_path)} />
         </li>
       ))}
     </ul>

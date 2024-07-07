@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api';
 import { open } from '@tauri-apps/api/dialog';
 import { pictureDir } from '@tauri-apps/api/path';
 import { type FC, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useFormContext } from 'react-hook-form';
 import { Fieldset } from '../form/Fieldset/Fieldset';
 
 const subFolderOptions = [
@@ -20,14 +20,7 @@ const subFolderOptions = [
 
 export const OptionsForm: FC = (): JSX.Element => {
   const [showDngConverterAlert, setShowDngConverterAlert] = useState(false);
-  const { handleSubmit, control, getValues, setValue, watch } = useForm({
-    defaultValues: async () => ({
-      location: await pictureDir(),
-      createSubFoldersPattern: subFolderOptions[2].id,
-      convertToDng: false,
-      deleteOriginal: false,
-    }),
-  });
+  const { handleSubmit, control, getValues, setValue } = useFormContext();
 
   // @ts-ignore
   const onSubmit = (data) => {

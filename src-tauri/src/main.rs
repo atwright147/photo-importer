@@ -2,8 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::Serialize;
+use std::fs;
 use std::path::Path;
 use std::process::Command;
+use tauri::regex::Regex;
 use webbrowser;
 
 // https://en.wikipedia.org/wiki/Raw_image_format#Raw_filename_extensions_and_respective_camera_manufacturers_or_standard
@@ -18,6 +20,17 @@ struct FileInfo {
   path: String,
   is_file: bool,
   size: Option<u64>,
+}
+
+#[derive(Serialize)]
+struct ThumbnailResponse {
+  thumbnail_path: String,
+  original_path: String,
+}
+
+#[derive(Serialize)]
+struct ErrorResponse {
+  error: String,
 }
 
 fn is_hidden(entry: &walkdir::DirEntry) -> bool {
@@ -68,24 +81,51 @@ fn list_files(drive_path: String) -> Result<Vec<FileInfo>, String> {
 
 #[tauri::command]
 fn extract_thumbnail(path: &Path) -> String {
-  let path_str = path.to_str().expect("Invalid path");
+  let path_str = match path.to_str() {
+    Some(p) => p,
+    None => {
+      return serde_json::to_string(&ErrorResponse {
+        error: "Invalid path".to_string(),
+      })
+      .unwrap();
+    }
+  };
   println!("Received drive path: {}", path_str);
 
   let thumbnail_dir = "/Users/andy/Desktop/thumbnails/";
 
   // Ensure the directory exists
   if !Path::new(thumbnail_dir).exists() {
-    match std::fs::create_dir_all(thumbnail_dir) {
-      Ok(_) => println!("Created thumbnail directory: {}", thumbnail_dir),
-      Err(e) => return format!("Failed to create thumbnail directory: {}", e),
+    if let Err(e) = std::fs::create_dir_all(thumbnail_dir) {
+      return serde_json::to_string(&ErrorResponse {
+        error: format!("Failed to create thumbnail directory: {}", e),
+      })
+      .unwrap();
     }
+    println!("Created thumbnail directory: {}", thumbnail_dir);
   }
 
   // Define the thumbnail path
   let thumbnail_path = format!(
     "{}{}_thumb.jpg",
     thumbnail_dir,
-    path.file_stem().expect("Invalid file name").to_str().expect("Invalid file name")
+    match path.file_stem() {
+      Some(f) => match f.to_str() {
+        Some(n) => n,
+        None => {
+          return serde_json::to_string(&ErrorResponse {
+            error: "Invalid file name".to_string(),
+          })
+          .unwrap();
+        }
+      },
+      None => {
+        return serde_json::to_string(&ErrorResponse {
+          error: "Invalid file name".to_string(),
+        })
+        .unwrap();
+      }
+    }
   );
 
   // Print the constructed thumbnail path
@@ -94,7 +134,11 @@ fn extract_thumbnail(path: &Path) -> String {
   // Check if the thumbnail already exists
   if Path::new(&thumbnail_path).exists() {
     println!("Thumbnail already exists, skipping creation: {}", thumbnail_path);
-    return format!("{}", &thumbnail_path);
+    return serde_json::to_string(&ThumbnailResponse {
+      thumbnail_path,
+      original_path: path_str.to_string(),
+    })
+    .unwrap();
   }
 
   let output = Command::new("exiftool")
@@ -113,13 +157,17 @@ fn extract_thumbnail(path: &Path) -> String {
   println!("Exiftool output status: {}", output.status);
   if !output.status.success() {
     println!("Exiftool error: {}", String::from_utf8_lossy(&output.stderr));
+    return serde_json::to_string(&ErrorResponse {
+      error: format!("Failed to extract thumbnail: {}", String::from_utf8_lossy(&output.stderr)),
+    })
+    .unwrap();
   }
 
-  if output.status.success() {
-    format!("{}", &thumbnail_path)
-  } else {
-    format!("Failed to extract thumbnail: {}", String::from_utf8_lossy(&output.stderr))
-  }
+  serde_json::to_string(&ThumbnailResponse {
+    thumbnail_path,
+    original_path: path_str.to_string(),
+  })
+  .unwrap()
 }
 
 #[tauri::command]
@@ -130,6 +178,64 @@ fn open_url(url: &str) -> Result<(), String> {
   }
 }
 
+fn get_shot_date(file_path: &str) -> Result<String, String> {
+  let output = Command::new("exiftool")
+    .arg("-DateTimeOriginal")
+    .arg("-s3")
+    .arg(file_path)
+    .output()
+    .map_err(|e| format!("Failed to execute exiftool: {}", e))?;
+
+  if !output.status.success() {
+    return Err(format!("exiftool failed with status: {}", output.status));
+  }
+
+  let stdout = String::from_utf8_lossy(&output.stdout);
+  let date_str = stdout.trim();
+
+  // Parse the date and format it as YYYY-MM-DD
+  let date_re = Regex::new(r"(\d{4}):(\d{2}):(\d{2})").unwrap();
+  if let Some(caps) = date_re.captures(date_str) {
+    let date = format!("{}-{}-{}", &caps[1], &caps[2], &caps[3]);
+    return Ok(date);
+  }
+
+  Err("Failed to extract shot date".to_string())
+}
+
+#[tauri::command]
+fn copy_or_convert(sources: Vec<String>, destination: String, use_dng_converter: bool) -> Result<(), String> {
+  for source in sources.iter() {
+    let shot_date = get_shot_date(source)?;
+
+    // Create the destination directory path
+    let dest_dir = format!("{}/{}", destination, shot_date);
+    fs::create_dir_all(&dest_dir).map_err(|e| format!("Failed to create destination directory: {}", e))?;
+
+    if use_dng_converter {
+      // Use Adobe DNG Converter
+      let output = Command::new("/Applications/Adobe DNG Converter.app/Contents/MacOS/Adobe DNG Converter")
+        .arg("-mp")
+        .arg("-d")
+        .arg(&dest_dir)
+        .arg(source)
+        .output()
+        .map_err(|e| format!("Failed to execute DNG Converter: {}", e))?;
+
+      if !output.status.success() {
+        return Err(format!("DNG Converter failed with status: {}", output.status));
+      }
+    } else {
+      // Copy the file to the destination directory
+      let file_name = source.split('/').last().ok_or("Invalid source file path")?;
+      let dest_path = format!("{}/{}", dest_dir, file_name);
+      fs::copy(source, &dest_path).map_err(|e| format!("Failed to copy file: {}", e))?;
+    }
+  }
+
+  Ok(())
+}
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -138,7 +244,13 @@ fn greet(name: &str) -> String {
 
 fn main() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![extract_thumbnail, list_files, greet, open_url])
+    .invoke_handler(tauri::generate_handler![
+      copy_or_convert,
+      extract_thumbnail,
+      list_files,
+      greet,
+      open_url
+    ])
     .plugin(tauri_plugin_system_info::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

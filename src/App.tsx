@@ -1,25 +1,50 @@
 import { Button, Flex, Grid, Item, Picker, Provider, Text, View, defaultTheme } from '@adobe/react-spectrum';
-import { invoke } from '@tauri-apps/api';
+import { invoke, process } from '@tauri-apps/api';
 import type { FileEntry } from '@tauri-apps/api/fs';
+import { pictureDir } from '@tauri-apps/api/path';
 import { useEffect, useMemo, useState } from 'react';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { AllSystemInfo, allSysInfo } from 'tauri-plugin-system-info-api';
 import type { Disk } from 'tauri-plugin-system-info-api';
+
+import { OptionsForm } from './components/OptionsForm/OptionsForm';
 import { SlideList } from './components/SlideList/SlideList';
+import { Fieldset } from './components/form/Fieldset/Fieldset';
 import { usePhotosStore } from './stores/photos.store';
 import type { FileInfo } from './types/File';
-
 import './App.css';
-import { OptionsForm } from './components/OptionsForm/OptionsForm';
-import { Fieldset } from './components/form/Fieldset/Fieldset';
+import type { ExtractedThumbnails } from './types/ExtractedThumbnail';
+
+const subFolderOptions = [
+  { id: 'none', name: 'None' },
+  { id: 'custom', name: 'Custom Name' },
+  { id: 'yyyymmdd', name: 'Shot Date (yyyymmdd)' }, // default?
+  { id: 'yymmdd', name: 'Shot Date (yymmdd)' },
+  { id: 'ddmmyy', name: 'Shot Date (ddmmyy)' },
+  { id: 'ddmm', name: 'Shot Date (ddmm)' },
+  { id: 'yyyyddmmm', name: 'Shot Date (yyyyddmmm)' },
+  { id: 'ddmmmyyyy', name: 'Shot Date (ddmmmyyyy)' },
+];
 
 function App() {
   const [disk, setDisk] = useState('');
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
-  const [extractedThumbnails, setExtractedThumbnails] = useState<string[]>([]);
+  const [extractedThumbnails, setExtractedThumbnails] = useState<ExtractedThumbnails[]>([]);
   const selected = usePhotosStore((state) => state.selected);
 
   const options = useMemo(() => removableDisks.map((disk) => ({ id: disk.mount_point, name: disk.name })), [removableDisks]);
+
+  const methods = useForm({
+    defaultValues: async () => ({
+      location: await pictureDir(),
+      createSubFoldersPattern: subFolderOptions[2].id,
+      convertToDng: false,
+      deleteOriginal: false,
+    }),
+  });
+
+  const formValues = useWatch(methods);
 
   useEffect(() => {
     (async () => {
@@ -37,9 +62,7 @@ function App() {
       }
       const results = await Promise.allSettled(promises);
 
-      console.info('results', results);
-
-      setExtractedThumbnails(results.map((result) => (result.status === 'fulfilled' ? result.value : '')));
+      setExtractedThumbnails(results.map((result) => (result.status === 'fulfilled' ? JSON.parse(result.value) : '')));
     })();
   }, [files]);
 
@@ -80,6 +103,16 @@ function App() {
     }
   };
 
+  const copyOrConvertFile = async (sources: string[], destination: string, useDngConverter: boolean): Promise<void> => {
+    console.info('copyOrConvertFile', sources, destination, useDngConverter);
+    try {
+      await invoke('copy_or_convert', { sources, destination, useDngConverter });
+      console.log('Operation successful');
+    } catch (error) {
+      console.error('Operation failed', error);
+    }
+  };
+
   return (
     <Provider theme={defaultTheme} minHeight="100vh">
       <Grid
@@ -112,14 +145,12 @@ function App() {
               </Picker>
             </Fieldset>
           </form>
-          <SlideList files={files} extractedThumbnails={extractedThumbnails} />
-          <details>
-            <summary>Debug</summary>
-            <pre>{JSON.stringify({ disk, removableDisks, options, files, extractedThumbnails, selected }, null, 2)}</pre>
-          </details>
+          <SlideList extractedThumbnails={extractedThumbnails} />
         </View>
         <View gridArea="sidebar" elementType="aside" padding="5px">
-          <OptionsForm />
+          <FormProvider {...methods}>
+            <OptionsForm />
+          </FormProvider>
         </View>
         <View gridArea="footer" elementType="footer">
           <Flex alignItems="center" justifyContent="space-between">
@@ -130,7 +161,11 @@ function App() {
               <Button variant="primary" type="button" onPress={handleClose}>
                 Quit
               </Button>
-              <Button variant="cta" type="button">
+              <Button
+                variant="cta"
+                type="button"
+                onPress={() => copyOrConvertFile(selected, formValues.location ?? '', formValues.convertToDng ?? false)}
+              >
                 Import
               </Button>
             </Flex>
