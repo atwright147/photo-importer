@@ -1,7 +1,7 @@
 import { Button, Flex, Grid, Item, Picker, Provider, Text, View, defaultTheme } from '@adobe/react-spectrum';
 import { invoke, process } from '@tauri-apps/api';
 import type { FileEntry } from '@tauri-apps/api/fs';
-import { pictureDir } from '@tauri-apps/api/path';
+import { appDataDir, pictureDir } from '@tauri-apps/api/path';
 import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { AllSystemInfo, allSysInfo } from 'tauri-plugin-system-info-api';
@@ -11,9 +11,11 @@ import { OptionsForm } from './components/OptionsForm/OptionsForm';
 import { SlideList } from './components/SlideList/SlideList';
 import { Fieldset } from './components/form/Fieldset/Fieldset';
 import { usePhotosStore } from './stores/photos.store';
-import type { FileInfo } from './types/File';
-import './App.css';
 import type { ExtractedThumbnails } from './types/ExtractedThumbnail';
+import type { FileInfo } from './types/File';
+
+import './App.css';
+import { Store } from 'tauri-plugin-store-api';
 
 const subFolderOptions = [
   { id: 'none', name: 'None' },
@@ -26,7 +28,15 @@ const subFolderOptions = [
   { id: 'ddmmmyyyy', name: 'Shot Date (ddmmmyyyy)' },
 ];
 
+interface FormValues {
+  location: string;
+  createSubFoldersPattern: string;
+  convertToDng: boolean;
+  deleteOriginal: boolean;
+}
+
 function App() {
+  const store = new Store('photo-importer.settings.json');
   const [disk, setDisk] = useState('');
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
@@ -35,16 +45,24 @@ function App() {
 
   const options = useMemo(() => removableDisks.map((disk) => ({ id: disk.mount_point, name: disk.name })), [removableDisks]);
 
-  const methods = useForm({
+  const methods = useForm<FormValues>({
     defaultValues: async () => ({
-      location: await pictureDir(),
-      createSubFoldersPattern: subFolderOptions[2].id,
-      convertToDng: false,
-      deleteOriginal: false,
+      location: (await store.get('location')) ?? (await pictureDir()),
+      createSubFoldersPattern: (await store.get('createSubFoldersPattern')) ?? subFolderOptions[2].id,
+      convertToDng: (await store.get('convertToDng')) ?? false,
+      deleteOriginal: (await store.get('deleteOriginal')) ?? false,
     }),
   });
 
   const formValues = useWatch(methods);
+
+  // dirty logging
+  useEffect(() => {
+    (async () => {
+      const appDataDirPath = await appDataDir();
+      console.info('appDataDirPath', appDataDirPath);
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {

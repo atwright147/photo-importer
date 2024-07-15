@@ -3,8 +3,9 @@ import { DevTool } from '@hookform/devtools';
 import { invoke } from '@tauri-apps/api';
 import { open } from '@tauri-apps/api/dialog';
 import { pictureDir } from '@tauri-apps/api/path';
-import { type FC, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import { Controller, useForm, useFormContext } from 'react-hook-form';
+import { Store } from 'tauri-plugin-store-api';
 import { Fieldset } from '../form/Fieldset/Fieldset';
 
 const subFolderOptions = [
@@ -22,6 +23,15 @@ export const OptionsForm: FC = (): JSX.Element => {
   const [showDngConverterAlert, setShowDngConverterAlert] = useState(false);
   const { handleSubmit, control, getValues, setValue } = useFormContext();
 
+  const store = new Store('photo-importer.settings.json');
+
+  useEffect(() => {
+    (async () => {
+      const storeEntries = await store.entries();
+      console.info('storeEntries', storeEntries);
+    })();
+  }, [store.entries]);
+
   // @ts-ignore
   const onSubmit = (data) => {
     // Call your API here...
@@ -35,7 +45,7 @@ export const OptionsForm: FC = (): JSX.Element => {
     const selected = await open({
       directory: true,
       multiple: false,
-      defaultPath: await pictureDir(),
+      defaultPath: getValues('location'),
     });
 
     if (selected === null) {
@@ -46,6 +56,8 @@ export const OptionsForm: FC = (): JSX.Element => {
       console.info('selected', selected);
       const shouldDirty = previousValue !== selected;
       setValue('location', selected as string, { shouldDirty, shouldTouch: true });
+      await store.set('location', selected);
+      await store.save();
     }
   };
 
@@ -59,6 +71,17 @@ export const OptionsForm: FC = (): JSX.Element => {
 
   const handleGetDngConverter = () => {
     invoke('open_url', { url: 'https://helpx.adobe.com/uk/camera-raw/using/adobe-dng-converter.html' });
+  };
+
+  const handleFieldChange = async (value: string | number | boolean, name: string, onChangeFn: (value: string) => void): Promise<void> => {
+    console.info('handleFieldChange', { value, name });
+    onChangeFn(String(value));
+    try {
+      await store.set(name, value);
+      await store.save();
+    } catch (err) {
+      console.info(err);
+    }
   };
 
   return (
@@ -98,7 +121,7 @@ export const OptionsForm: FC = (): JSX.Element => {
                 label="Create Sub-Folders"
                 name={name}
                 items={subFolderOptions}
-                onSelectionChange={onChange}
+                onSelectionChange={(event) => handleFieldChange(event as string, name, onChange)}
                 selectedKey={value}
                 onBlur={onBlur}
                 ref={ref}
@@ -119,7 +142,7 @@ export const OptionsForm: FC = (): JSX.Element => {
                 control={control}
                 name="convertToDng"
                 render={({ field: { name, value, onChange, onBlur, ref } }) => (
-                  <Checkbox name={name} onChange={onChange} onBlur={onBlur} ref={ref} isRequired>
+                  <Checkbox name={name} onChange={(event) => handleFieldChange(event, name, onChange)} onBlur={onBlur} ref={ref} isRequired>
                     Convert To DNG
                   </Checkbox>
                 )}
@@ -133,7 +156,7 @@ export const OptionsForm: FC = (): JSX.Element => {
               name="deleteOriginal"
               rules={{ required: 'Create sub-folders pattern is required.' }}
               render={({ field: { name, value, onChange, onBlur, ref } }) => (
-                <Checkbox name={name} onChange={onChange} onBlur={onBlur} ref={ref} isRequired>
+                <Checkbox name={name} onChange={(event) => handleFieldChange(event, name, onChange)} onBlur={onBlur} ref={ref} isRequired>
                   Delete Original
                 </Checkbox>
               )}
