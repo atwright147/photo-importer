@@ -2,9 +2,8 @@ import { AlertDialog, Button, Checkbox, DialogContainer, Flex, Form, Item, Picke
 import { DevTool } from '@hookform/devtools';
 import { invoke } from '@tauri-apps/api';
 import { open } from '@tauri-apps/api/dialog';
-import { pictureDir } from '@tauri-apps/api/path';
 import { type FC, useEffect, useState } from 'react';
-import { Controller, useForm, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
 import { Store } from 'tauri-plugin-store-api';
 import { Fieldset } from '../form/Fieldset/Fieldset';
 
@@ -94,7 +93,7 @@ export const OptionsForm: FC = (): JSX.Element => {
               control={control}
               name="location"
               rules={{ required: 'Location is required.' }}
-              render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { invalid, error } }) => (
+              render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { error } }) => (
                 <TextField
                   label="Location"
                   name={name}
@@ -116,7 +115,7 @@ export const OptionsForm: FC = (): JSX.Element => {
             control={control}
             name="createSubFoldersPattern"
             rules={{ required: 'Location is required.' }}
-            render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { invalid, error } }) => (
+            render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { error } }) => (
               <Picker
                 label="Create Sub-Folders"
                 name={name}
@@ -142,7 +141,13 @@ export const OptionsForm: FC = (): JSX.Element => {
                 control={control}
                 name="convertToDng"
                 render={({ field: { name, value, onChange, onBlur, ref } }) => (
-                  <Checkbox name={name} onChange={(event) => handleFieldChange(event, name, onChange)} onBlur={onBlur} ref={ref} isRequired>
+                  <Checkbox
+                    name={name}
+                    onChange={(event) => handleFieldChange(event, name, onChange)}
+                    onBlur={onBlur}
+                    ref={ref}
+                    isSelected={value}
+                  >
                     Convert To DNG
                   </Checkbox>
                 )}
@@ -156,7 +161,13 @@ export const OptionsForm: FC = (): JSX.Element => {
               name="deleteOriginal"
               rules={{ required: 'Create sub-folders pattern is required.' }}
               render={({ field: { name, value, onChange, onBlur, ref } }) => (
-                <Checkbox name={name} onChange={(event) => handleFieldChange(event, name, onChange)} onBlur={onBlur} ref={ref} isRequired>
+                <Checkbox
+                  name={name}
+                  onChange={(event) => handleFieldChange(event, name, onChange)}
+                  onBlur={onBlur}
+                  ref={ref}
+                  isSelected={value}
+                >
                   Delete Original
                 </Checkbox>
               )}
