@@ -173,7 +173,7 @@ function App() {
         <View gridArea="footer" elementType="footer">
           <Flex alignItems="center" justifyContent="space-between">
             <View>
-              <Text>Selected: n</Text>
+              <Text>Selected: {selected.length}</Text>
             </View>
             <Flex gap="size-100">
               <Button variant="primary" type="button" onPress={handleClose}>
