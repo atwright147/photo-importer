@@ -7,7 +7,15 @@
     "ignore": [".vscode", "tsconfig*.json"],
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": {
+          "level": "warn"
+        },
+        "useHookAtTopLevel": {
+          "level": "error"
+        }
+      }
     }
   },
   "formatter": {

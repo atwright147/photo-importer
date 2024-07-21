@@ -261,6 +261,11 @@ fn copy_or_convert(sources: Vec<String>, destination: String, use_dng_converter:
   Ok(())
 }
 
+#[tauri::command]
+fn is_dev() -> bool {
+  !cfg!(feature = "custom-protocol")
+}
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -272,6 +277,7 @@ fn main() {
     .invoke_handler(tauri::generate_handler![
       copy_or_convert,
       extract_thumbnail,
+      is_dev,
       list_files,
       greet,
       open_url

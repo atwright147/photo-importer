@@ -191,7 +191,7 @@ export const OptionsForm: FC = (): JSX.Element => {
         )}
       </DialogContainer>
 
-      <DevTool control={control} placement="bottom-left" />
+      <DevTool control={control} placement="top-left" />
     </>
   );
 };

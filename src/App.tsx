@@ -4,18 +4,19 @@ import type { FileEntry } from '@tauri-apps/api/fs';
 import { appDataDir, pictureDir } from '@tauri-apps/api/path';
 import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
-import { AllSystemInfo, allSysInfo } from 'tauri-plugin-system-info-api';
+import { Store } from 'tauri-plugin-store-api';
 import type { Disk } from 'tauri-plugin-system-info-api';
 
 import { OptionsForm } from './components/OptionsForm/OptionsForm';
 import { SlideList } from './components/SlideList/SlideList';
 import { Fieldset } from './components/form/Fieldset/Fieldset';
+import { useDisksQuery } from './hooks/useDisksQuery';
+import { useIsDev } from './hooks/useIsDev';
 import { usePhotosStore } from './stores/photos.store';
 import type { ExtractedThumbnails } from './types/ExtractedThumbnail';
 import type { FileInfo } from './types/File';
 
 import './App.css';
-import { Store } from 'tauri-plugin-store-api';
 
 const subFolderOptions = [
   { id: 'none', name: 'None' },
@@ -37,13 +38,26 @@ interface FormValues {
 
 function App() {
   const store = new Store('photo-importer.settings.json');
-  const [disk, setDisk] = useState('');
+  const [disk, setDisk] = useState<string>('');
+  const { data: disks, isLoading: isLoadingDisks, refetch: refetchDisks } = useDisksQuery();
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
   const [extractedThumbnails, setExtractedThumbnails] = useState<ExtractedThumbnails[]>([]);
   const selected = usePhotosStore((state) => state.selected);
+  const isDev = useIsDev(true);
 
-  const options = useMemo(() => removableDisks.map((disk) => ({ id: disk.mount_point, name: disk.name })), [removableDisks]);
+  const isRemovableDisk = (disk: Disk): boolean => {
+    if (isDev) {
+      return disk.name.toLowerCase().startsWith('fake') || disk.is_removable;
+    }
+    return disk.is_removable;
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const options = useMemo(
+    () => disks?.filter((disk) => isRemovableDisk(disk)).map((disk) => ({ id: disk.mount_point, name: disk.name })),
+    [disks],
+  );
 
   const methods = useForm<FormValues>({
     defaultValues: async () => ({
@@ -58,19 +72,14 @@ function App() {
 
   // dirty logging
   useEffect(() => {
+    if (!isDev) return;
+
+    console.info('isDev', isDev);
     (async () => {
       const appDataDirPath = await appDataDir();
       console.info('appDataDirPath', appDataDirPath);
     })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      const disks = await getRemovableDisks();
-      const removableDisks = disks; //.filter((disk) => disk.is_removable);
-      setRemovableDisks(removableDisks);
-    })();
-  }, []);
+  }, [isDev]);
 
   useEffect(() => {
     (async () => {
@@ -97,21 +106,7 @@ function App() {
     })();
   }, [disk]);
 
-  const getRemovableDisks = async (): Promise<Disk[]> => {
-    try {
-      return AllSystemInfo.parse(await allSysInfo()).disks;
-    } catch (err) {
-      console.info(err);
-      return Promise.reject([]);
-    }
-  };
-
-  const handleFocus = async () => {
-    const disks = await getRemovableDisks();
-    const removableDisks = disks; //.filter((disk) => disk.is_removable);
-    // const removableDisks = disks;
-    setRemovableDisks(removableDisks);
-  };
+  const handleFocus = () => refetchDisks();
 
   const handleClose = async (): Promise<void> => {
     try {
@@ -153,14 +148,17 @@ function App() {
               <Picker
                 label="Source Disk"
                 name="sourceDisk"
-                items={options}
+                items={options ?? []}
                 onSelectionChange={(value) => setDisk(String(value))}
                 onFocus={handleFocus}
+                isLoading={isLoadingDisks}
                 isRequired
                 width="100%"
               >
                 {(item) => <Item>{item.name}</Item>}
               </Picker>
+              <pre>{JSON.stringify(removableDisks, null, 2)}</pre>
+              <pre>{JSON.stringify(options, null, 2)}</pre>
             </Fieldset>
           </form>
           <SlideList extractedThumbnails={extractedThumbnails} />
