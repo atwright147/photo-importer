@@ -19,6 +19,7 @@ tauri-plugin-system-info = "1"
 walkdir = "2.3.2"
 webbrowser = "1.0.1"
 tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+xxhash-rust = {version = "0.8.11", features= ["xxh3", "const_xxh3"] }
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

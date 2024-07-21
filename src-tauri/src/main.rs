@@ -2,11 +2,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::Serialize;
-use std::fs;
+use std::fs::{self, File};
+use std::io::{BufReader, Read};
 use std::path::Path;
 use std::process::Command;
 use tauri::regex::Regex;
 use webbrowser;
+use xxhash_rust::xxh3::Xxh3;
 
 // https://en.wikipedia.org/wiki/Raw_image_format#Raw_filename_extensions_and_respective_camera_manufacturers_or_standard
 static ALLOWED_EXTENSIONS: &[&str] = &[
@@ -105,28 +107,51 @@ fn extract_thumbnail(path: &Path) -> String {
     println!("Created thumbnail directory: {}", thumbnail_dir);
   }
 
-  // Define the thumbnail path
-  let thumbnail_path = format!(
-    "{}{}_thumb.jpg",
-    thumbnail_dir,
-    match path.file_stem() {
-      Some(f) => match f.to_str() {
-        Some(n) => n,
-        None => {
-          return serde_json::to_string(&ErrorResponse {
-            error: "Invalid file name".to_string(),
-          })
-          .unwrap();
-        }
-      },
-      None => {
+  // Compute the hash of the file using chunking
+  let file = match File::open(path) {
+    Ok(f) => f,
+    Err(e) => {
+      return serde_json::to_string(&ErrorResponse {
+        error: format!("Failed to open file: {}", e),
+      })
+      .unwrap();
+    }
+  };
+
+  let mut reader = BufReader::new(file);
+  let mut hasher = Xxh3::new();
+  let mut buffer = [0; 8192];
+
+  loop {
+    match reader.read(&mut buffer) {
+      Ok(0) => break,
+      Ok(n) => {
+        hasher.update(&buffer[..n]);
+      }
+      Err(e) => {
         return serde_json::to_string(&ErrorResponse {
-          error: "Invalid file name".to_string(),
+          error: format!("Failed to read file: {}", e),
         })
         .unwrap();
       }
     }
-  );
+  }
+
+  let hash = hasher.digest();
+
+  // Extract the original filename
+  let original_filename = match path.file_stem() {
+    Some(name) => name.to_string_lossy().into_owned(),
+    None => {
+      return serde_json::to_string(&ErrorResponse {
+        error: "Failed to extract original filename".to_string(),
+      })
+      .unwrap();
+    }
+  };
+
+  // Define the thumbnail path using the hash and the original filename
+  let thumbnail_path = format!("{}{}_{}.jpg", thumbnail_dir, original_filename, hash);
 
   // Print the constructed thumbnail path
   println!("Thumbnail will be saved to: {}", thumbnail_path);
@@ -135,7 +160,7 @@ fn extract_thumbnail(path: &Path) -> String {
   if Path::new(&thumbnail_path).exists() {
     println!("Thumbnail already exists, skipping creation: {}", thumbnail_path);
     return serde_json::to_string(&ThumbnailResponse {
-      thumbnail_path,
+      thumbnail_path: thumbnail_path.clone(),
       original_path: path_str.to_string(),
     })
     .unwrap();
@@ -146,7 +171,7 @@ fn extract_thumbnail(path: &Path) -> String {
       "-thumbnailimage",
       "-b",
       "-w",
-      "/Users/andy/Desktop/thumbnails/%f_thumb.jpg",
+      &format!("{}%f_{}.jpg", thumbnail_dir, hash),
       path_str,
     ])
     .current_dir(thumbnail_dir) // Set the working directory to the thumbnail directory
@@ -164,7 +189,7 @@ fn extract_thumbnail(path: &Path) -> String {
   }
 
   serde_json::to_string(&ThumbnailResponse {
-    thumbnail_path,
+    thumbnail_path: thumbnail_path.clone(),
     original_path: path_str.to_string(),
   })
   .unwrap()
