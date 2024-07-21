@@ -5,18 +5,9 @@ import { open } from '@tauri-apps/api/dialog';
 import { type FC, useEffect, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { Store } from 'tauri-plugin-store-api';
-import { Fieldset } from '../form/Fieldset/Fieldset';
 
-const subFolderOptions = [
-  { id: 'none', name: 'None' },
-  { id: 'custom', name: 'Custom Name' },
-  { id: 'yyyymmdd', name: 'Shot Date (yyyymmdd)' }, // default?
-  { id: 'yymmdd', name: 'Shot Date (yymmdd)' },
-  { id: 'ddmmyy', name: 'Shot Date (ddmmyy)' },
-  { id: 'ddmm', name: 'Shot Date (ddmm)' },
-  { id: 'yyyyddmmm', name: 'Shot Date (yyyyddmmm)' },
-  { id: 'ddmmmyyyy', name: 'Shot Date (ddmmmyyyy)' },
-];
+import { subFolderOptions } from '../../constants';
+import { Fieldset } from '../form/Fieldset/Fieldset';
 
 export const OptionsForm: FC = (): JSX.Element => {
   const [showDngConverterAlert, setShowDngConverterAlert] = useState(false);

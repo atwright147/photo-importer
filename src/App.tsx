@@ -10,6 +10,7 @@ import type { Disk } from 'tauri-plugin-system-info-api';
 import { OptionsForm } from './components/OptionsForm/OptionsForm';
 import { SlideList } from './components/SlideList/SlideList';
 import { Fieldset } from './components/form/Fieldset/Fieldset';
+import { subFolderOptions } from './constants';
 import { useDisksQuery } from './hooks/useDisksQuery';
 import { useIsDev } from './hooks/useIsDev';
 import { usePhotosStore } from './stores/photos.store';
@@ -17,17 +18,6 @@ import type { ExtractedThumbnails } from './types/ExtractedThumbnail';
 import type { FileInfo } from './types/File';
 
 import './App.css';
-
-const subFolderOptions = [
-  { id: 'none', name: 'None' },
-  { id: 'custom', name: 'Custom Name' },
-  { id: 'yyyymmdd', name: 'Shot Date (yyyymmdd)' }, // default?
-  { id: 'yymmdd', name: 'Shot Date (yymmdd)' },
-  { id: 'ddmmyy', name: 'Shot Date (ddmmyy)' },
-  { id: 'ddmm', name: 'Shot Date (ddmm)' },
-  { id: 'yyyyddmmm', name: 'Shot Date (yyyyddmmm)' },
-  { id: 'ddmmmyyyy', name: 'Shot Date (ddmmmyyyy)' },
-];
 
 interface FormValues {
   location: string;
