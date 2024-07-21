@@ -147,8 +147,6 @@ function App() {
               >
                 {(item) => <Item>{item.name}</Item>}
               </Picker>
-              <pre>{JSON.stringify(removableDisks, null, 2)}</pre>
-              <pre>{JSON.stringify(options, null, 2)}</pre>
             </Fieldset>
           </form>
           <SlideList extractedThumbnails={extractedThumbnails} />
