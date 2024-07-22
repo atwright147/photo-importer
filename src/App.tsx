@@ -31,7 +31,6 @@ function App() {
   const [disk, setDisk] = useState<string>('');
   const { data: disks, isLoading: isLoadingDisks, refetch: refetchDisks } = useDisksQuery();
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [removableDisks, setRemovableDisks] = useState<Disk[]>([]);
   const [extractedThumbnails, setExtractedThumbnails] = useState<ExtractedThumbnails[]>([]);
   const selected = usePhotosStore((state) => state.selected);
   const isDev = useIsDev(true);
