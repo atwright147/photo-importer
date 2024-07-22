@@ -2,16 +2,20 @@ import { AlertDialog, Button, Checkbox, DialogContainer, Flex, Form, Item, Picke
 import { DevTool } from '@hookform/devtools';
 import { invoke } from '@tauri-apps/api';
 import { open } from '@tauri-apps/api/dialog';
-import { type FC, useEffect, useState } from 'react';
+import { type FC, useEffect, useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { Store } from 'tauri-plugin-store-api';
 
+import type { Disk } from 'tauri-plugin-system-info-api';
 import { subFolderOptions } from '../../constants';
+import { useDisksQuery } from '../../hooks/useDisksQuery';
+import { useIsDev } from '../../hooks/useIsDev';
 import { Fieldset } from '../form/Fieldset/Fieldset';
 
 export const OptionsForm: FC = (): JSX.Element => {
   const [showDngConverterAlert, setShowDngConverterAlert] = useState(false);
   const { handleSubmit, control, getValues, setValue } = useFormContext();
+  const isDev = useIsDev(true);
 
   const store = new Store('photo-importer.settings.json');
 
@@ -86,56 +90,102 @@ export const OptionsForm: FC = (): JSX.Element => {
     await handleFieldChange(value, name, onChangeFn);
   };
 
+  const { data: disks, isLoading: isLoadingDisks, refetch: refetchDisks } = useDisksQuery();
+
+  const isRemovableDisk = (disk: Disk): boolean => {
+    if (isDev) {
+      return disk.name.toLowerCase().startsWith('fake') || disk.is_removable;
+    }
+    return disk.is_removable;
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const options = useMemo(
+    () => disks?.filter((disk) => isRemovableDisk(disk)).map((disk) => ({ id: disk.mount_point, name: disk.name })),
+    [disks],
+  );
+
+  const handleFocus = () => refetchDisks();
+
   return (
     <>
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Fieldset>
           <legend>Options</legend>
-          <Flex gap="size-100" direction="row" alignItems="end">
+
+          <Flex gap="size-100" direction="column">
             <Controller
               control={control}
-              name="location"
+              name="sourceDisk"
               rules={{ required: 'Location is required.' }}
               render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { error } }) => (
-                <TextField
-                  label="Location"
+                <Picker
+                  label="Source Disk"
                   name={name}
-                  value={value}
-                  onChange={onChange}
+                  items={options ?? []}
+                  onSelectionChange={(event) => handleFieldChange(event as string, name, onChange)}
+                  selectedKey={value}
+                  onFocus={handleFocus}
+                  onBlur={onBlur}
+                  ref={ref}
+                  isLoading={isLoadingDisks}
+                  isRequired
+                  errorMessage={error?.message}
+                  width="100%"
+                >
+                  {(item) => <Item>{item.name}</Item>}
+                </Picker>
+              )}
+            />
+
+            <Flex gap="size-100" direction="row" alignItems="end">
+              <Controller
+                control={control}
+                name="location"
+                rules={{ required: 'Location is required.' }}
+                render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { error } }) => (
+                  <TextField
+                    label="Location"
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    onBlur={onBlur}
+                    ref={ref}
+                    isRequired
+                    errorMessage={error?.message}
+                    width="100%"
+                  />
+                )}
+              />
+              <Button type="button" variant="secondary" onPress={handleChooseFolder}>
+                Folder
+              </Button>
+            </Flex>
+
+            <Controller
+              control={control}
+              name="createSubFoldersPattern"
+              rules={{ required: 'Location is required.' }}
+              render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { error } }) => (
+                <Picker
+                  label="Create Sub-Folders"
+                  name={name}
+                  items={subFolderOptions}
+                  onSelectionChange={(event) => handleFieldChange(event as string, name, onChange)}
+                  selectedKey={value}
                   onBlur={onBlur}
                   ref={ref}
                   isRequired
                   errorMessage={error?.message}
                   width="100%"
-                />
+                >
+                  {(item) => <Item>{item.name}</Item>}
+                </Picker>
               )}
             />
-            <Button type="button" variant="secondary" onPress={handleChooseFolder}>
-              Folder
-            </Button>
           </Flex>
-          <Controller
-            control={control}
-            name="createSubFoldersPattern"
-            rules={{ required: 'Location is required.' }}
-            render={({ field: { name, value, onChange, onBlur, ref }, fieldState: { error } }) => (
-              <Picker
-                label="Create Sub-Folders"
-                name={name}
-                items={subFolderOptions}
-                onSelectionChange={(event) => handleFieldChange(event as string, name, onChange)}
-                selectedKey={value}
-                onBlur={onBlur}
-                ref={ref}
-                isRequired
-                errorMessage={error?.message}
-                width="100%"
-              >
-                {(item) => <Item>{item.name}</Item>}
-              </Picker>
-            )}
-          />
         </Fieldset>
+
         <Fieldset>
           <legend>Advanced Options</legend>
           <Flex gap="size-100" direction="column">
