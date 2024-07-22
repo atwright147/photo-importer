@@ -56,7 +56,7 @@ export const OptionsForm: FC = (): JSX.Element => {
   };
 
   const handleCloseDngConverterAlert = () => {
-    console.info('handleDngAlertCancel');
+    setShowDngConverterAlert(false);
   };
 
   const handleGetDngConverter = () => {
@@ -72,6 +72,18 @@ export const OptionsForm: FC = (): JSX.Element => {
     } catch (err) {
       console.info(err);
     }
+  };
+
+  const handleDngConverterCheckboxChange = async (
+    value: string | number | boolean,
+    name: string,
+    onChangeFn: (value: string) => void,
+  ): Promise<void> => {
+    if (await !invoke<boolean>('is_dng_converter_available')) {
+      setShowDngConverterAlert(true);
+      return;
+    }
+    await handleFieldChange(value, name, onChangeFn);
   };
 
   return (
@@ -134,7 +146,7 @@ export const OptionsForm: FC = (): JSX.Element => {
                 render={({ field: { name, value, onChange, onBlur, ref } }) => (
                   <Checkbox
                     name={name}
-                    onChange={(event) => handleFieldChange(event, name, onChange)}
+                    onChange={(event) => handleDngConverterCheckboxChange(event, name, onChange)}
                     onBlur={onBlur}
                     ref={ref}
                     isSelected={value}

@@ -266,6 +266,32 @@ fn is_dev() -> bool {
   !cfg!(feature = "custom-protocol")
 }
 
+#[tauri::command]
+fn is_dng_converter_available() -> Result<bool, String> {
+  #[cfg(target_os = "windows")]
+  {
+    let output = Command::new("powershell")
+      .args(&["-Command", "Get-Command -Name 'Adobe DNG Converter' -ErrorAction SilentlyContinue"])
+      .output()
+      .map_err(|e| e.to_string())?;
+
+    return Ok(output.status.success());
+  }
+
+  #[cfg(target_os = "macos")]
+  {
+    let output = Command::new("sh")
+      .arg("-c")
+      .arg("mdfind 'kMDItemFSName == \"Adobe DNG Converter.app\"'")
+      .output()
+      .map_err(|e| e.to_string())?;
+
+    return Ok(!output.stdout.is_empty());
+  }
+
+  Err("Unsupported platform".into())
+}
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -279,6 +305,7 @@ fn main() {
       extract_thumbnail,
       is_dev,
       list_files,
+      is_dng_converter_available,
       greet,
       open_url
     ])
