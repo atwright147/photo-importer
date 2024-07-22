@@ -123,7 +123,7 @@ export const OptionsForm: FC = (): JSX.Element => {
                   label="Source Disk"
                   name={name}
                   items={options ?? []}
-                  onSelectionChange={(event) => handleFieldChange(event as string, name, onChange)}
+                  onSelectionChange={onChange}
                   selectedKey={value}
                   onFocus={handleFocus}
                   onBlur={onBlur}

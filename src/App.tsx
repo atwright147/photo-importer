@@ -31,7 +31,7 @@ function App() {
 
   const methods = useForm<FormValues>({
     defaultValues: async () => ({
-      sourceDisk: (await store.get('sourceDisk')) ?? '',
+      sourceDisk: '',
       location: (await store.get('location')) ?? (await pictureDir()),
       createSubFoldersPattern: (await store.get('createSubFoldersPattern')) ?? subFolderOptions[2].id,
       convertToDng: (await store.get('convertToDng')) ?? false,
