@@ -1,5 +1,6 @@
 import { AlertDialog, Button, Checkbox, DialogContainer, Flex, Form, Item, Picker, TextField } from '@adobe/react-spectrum';
 import { DevTool } from '@hookform/devtools';
+import IconFolder from '@spectrum-icons/workflow/Folder';
 import { invoke } from '@tauri-apps/api';
 import { open } from '@tauri-apps/api/dialog';
 import { type FC, useEffect, useMemo, useState } from 'react';
@@ -157,8 +158,8 @@ export const OptionsForm: FC = (): JSX.Element => {
                   />
                 )}
               />
-              <Button type="button" variant="secondary" onPress={handleChooseFolder}>
-                Folder
+              <Button type="button" variant="secondary" onPress={handleChooseFolder} aria-label="Select a folder">
+                <IconFolder />
               </Button>
             </Flex>
 
