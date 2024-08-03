@@ -74,10 +74,15 @@ function App() {
     }
   };
 
-  const copyOrConvertFile = async (sources: string[], destination: string, useDngConverter: boolean): Promise<void> => {
+  const copyOrConvertFile = async (
+    sources: string[],
+    destination: string,
+    useDngConverter: boolean,
+    deleteOriginal: boolean,
+  ): Promise<void> => {
     console.info('copyOrConvertFile', sources, destination, useDngConverter);
     try {
-      await invoke('copy_or_convert', { sources, destination, useDngConverter });
+      await invoke('copy_or_convert', { sources, destination, useDngConverter, deleteOriginal });
       console.log('Operation successful');
     } catch (error) {
       console.error('Operation failed', error);
@@ -114,7 +119,14 @@ function App() {
               <Button
                 variant="cta"
                 type="button"
-                onPress={() => copyOrConvertFile(selected, formValues.location ?? '', formValues.convertToDng ?? false)}
+                onPress={() =>
+                  copyOrConvertFile(
+                    selected,
+                    formValues.location ?? '',
+                    formValues.convertToDng ?? false,
+                    formValues.deleteOriginal ?? false,
+                  )
+                }
               >
                 Import
               </Button>

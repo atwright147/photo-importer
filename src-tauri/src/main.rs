@@ -229,7 +229,7 @@ fn get_shot_date(file_path: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn copy_or_convert(sources: Vec<String>, destination: String, use_dng_converter: bool) -> Result<(), String> {
+fn copy_or_convert(sources: Vec<String>, destination: String, use_dng_converter: bool, delete_original: bool) -> Result<(), String> {
   for source in sources.iter() {
     let shot_date = get_shot_date(source)?;
 
@@ -255,6 +255,11 @@ fn copy_or_convert(sources: Vec<String>, destination: String, use_dng_converter:
       let file_name = source.split('/').last().ok_or("Invalid source file path")?;
       let dest_path = format!("{}/{}", dest_dir, file_name);
       fs::copy(source, &dest_path).map_err(|e| format!("Failed to copy file: {}", e))?;
+    }
+
+    // If delete_original is set, delete the original file
+    if delete_original {
+      fs::remove_file(source).map_err(|e| format!("Failed to delete original file: {}", e))?;
     }
   }
 
