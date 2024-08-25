@@ -7,28 +7,36 @@ import styles from './Slide.module.scss';
 
 interface Props {
   thumb: string;
-  original: string;
+  hash: string;
   alt: string;
   title: string;
 }
 
-export const Slide: FC<Props> = ({ thumb, original, alt, title }): JSX.Element => {
-  const { setSelected, removeSelected } = usePhotosStore((state) => ({
+export const Slide: FC<Props> = ({ thumb, hash, alt, title }): JSX.Element => {
+  const { isSelected, setSelected, removeSelected } = usePhotosStore((state) => ({
+    isSelected: state.isSelected,
     setSelected: state.setSelected,
     removeSelected: state.removeSelected,
   }));
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>, original: string): void => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>, hash: string): void => {
     if (event.target.checked) {
-      setSelected(original);
+      setSelected(hash);
     } else {
-      removeSelected(original);
+      removeSelected(hash);
     }
   };
 
   return (
     <div className={styles.slideContainer}>
-      <input type="checkbox" name="image" value={thumb} id={thumb} onChange={(event) => handleChange(event, original)} />
+      <input
+        type="checkbox"
+        name="image"
+        value={thumb}
+        id={thumb}
+        checked={isSelected(hash)}
+        onChange={(event) => handleChange(event, hash)}
+      />
       <label className={styles.slide} htmlFor={thumb}>
         <figure className={styles.figure}>
           <img src={convertFileSrc(thumb)} alt={alt} />

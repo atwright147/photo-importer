@@ -28,6 +28,7 @@ struct FileInfo {
 struct ThumbnailResponse {
   thumbnail_path: String,
   original_path: String,
+  hash: String,
 }
 
 #[derive(Serialize)]
@@ -162,6 +163,7 @@ fn extract_thumbnail(path: &Path) -> String {
     return serde_json::to_string(&ThumbnailResponse {
       thumbnail_path: thumbnail_path.clone(),
       original_path: path_str.to_string(),
+      hash: hash.to_string(),
     })
     .unwrap();
   }
@@ -191,6 +193,7 @@ fn extract_thumbnail(path: &Path) -> String {
   serde_json::to_string(&ThumbnailResponse {
     thumbnail_path: thumbnail_path.clone(),
     original_path: path_str.to_string(),
+    hash: hash.to_string(),
   })
   .unwrap()
 }

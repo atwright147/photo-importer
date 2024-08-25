@@ -1,19 +1,41 @@
 import { create } from 'zustand';
 
+import type { ExtractedThumbnails } from '../types/ExtractedThumbnail';
+
 export interface State {
   selected: string[];
-  setSelected: (id: string) => void;
-  removeSelected: (id: string) => void;
-  empty: () => void;
+  extractedThumbnails: ExtractedThumbnails[];
+
+  isSelected: (id: string) => boolean;
+  setSelected: (ids: string | string[]) => void;
+  removeSelected: (ids: string | string[]) => void;
+  setSelectedAll: () => void;
+  setSelectNone: () => void;
+  setExtractedThumbnails: (thumbnails: ExtractedThumbnails[]) => void;
 }
 
-export const usePhotosStore = create<State>((set, get) => ({
+export const usePhotosStore = create<State>()((set, get) => ({
   selected: [],
-  setSelected: (id) => {
-    set({ selected: [...get().selected, id] });
+  extractedThumbnails: [],
+
+  isSelected: (id) => get().selected.includes(id),
+  setSelected: (ids) => {
+    if (Array.isArray(ids)) {
+      set({ selected: [...get().selected, ...ids] });
+      return;
+    }
+    set({ selected: [...get().selected, ids] });
   },
-  removeSelected: (id) => {
-    set({ selected: get().selected.filter((item) => item !== id) });
+  removeSelected: (ids) => {
+    if (Array.isArray(ids)) {
+      set({ selected: get().selected.filter((item) => !ids.includes(item)) });
+      return;
+    }
+    set({ selected: get().selected.filter((item) => item !== ids) });
   },
-  empty: () => set({ selected: [] }),
+  setSelectedAll: () => {
+    set({ selected: get().extractedThumbnails.map((item) => item.hash) });
+  },
+  setSelectNone: () => set({ selected: [] }),
+  setExtractedThumbnails: (thumbnails) => set({ extractedThumbnails: thumbnails }),
 }));

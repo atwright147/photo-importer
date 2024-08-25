@@ -10,7 +10,6 @@ import { OptionsForm } from './components/OptionsForm/OptionsForm';
 import { SlideList } from './components/SlideList/SlideList';
 import { subFolderOptions } from './constants';
 import { usePhotosStore } from './stores/photos.store';
-import type { ExtractedThumbnails } from './types/ExtractedThumbnail';
 import type { FileInfo } from './types/File';
 
 import './App.css';
@@ -26,8 +25,11 @@ interface FormValues {
 function App() {
   const store = new Store('photo-importer.settings.json');
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [extractedThumbnails, setExtractedThumbnails] = useState<ExtractedThumbnails[]>([]);
-  const selected = usePhotosStore((state) => state.selected);
+  const { selected, extractedThumbnails, setExtractedThumbnails } = usePhotosStore((state) => ({
+    selected: state.selected,
+    extractedThumbnails: state.extractedThumbnails,
+    setExtractedThumbnails: state.setExtractedThumbnails,
+  }));
 
   const methods = useForm<FormValues>({
     defaultValues: async () => ({
@@ -51,7 +53,7 @@ function App() {
 
       setExtractedThumbnails(results.map((result) => (result.status === 'fulfilled' ? JSON.parse(result.value) : '')));
     })();
-  }, [files]);
+  }, [files, setExtractedThumbnails]);
 
   useEffect(() => {
     if (!formValues.sourceDisk) return;

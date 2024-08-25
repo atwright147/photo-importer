@@ -13,7 +13,7 @@ export const SlideList: FC<Props> = ({ extractedThumbnails }): JSX.Element => {
     <ul className={styles.slideList}>
       {extractedThumbnails.map((file) => (
         <li key={file.original_path} className={styles.listItem}>
-          <Slide thumb={file.thumbnail_path} original={file.original_path} alt="" title={getFilename(file.original_path)} />
+          <Slide thumb={file.thumbnail_path} hash={file.hash} alt="" title={getFilename(file.original_path)} />
         </li>
       ))}
     </ul>

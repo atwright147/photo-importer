@@ -6,16 +6,21 @@ import { open } from '@tauri-apps/api/dialog';
 import { type FC, useEffect, useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { Store } from 'tauri-plugin-store-api';
-
 import type { Disk } from 'tauri-plugin-system-info-api';
+
 import { subFolderOptions } from '../../constants';
 import { useDisksQuery } from '../../hooks/useDisksQuery';
 import { useIsDev } from '../../hooks/useIsDev';
+import { usePhotosStore } from '../../stores/photos.store';
 import { Fieldset } from '../form/Fieldset/Fieldset';
 
 export const OptionsForm: FC = (): JSX.Element => {
   const [showDngConverterAlert, setShowDngConverterAlert] = useState(false);
   const { handleSubmit, control, getValues, setValue } = useFormContext();
+  const { setSelectedAll, setSelectNone } = usePhotosStore((store) => ({
+    setSelectedAll: store.setSelectedAll,
+    setSelectNone: store.setSelectNone,
+  }));
   const isDev = useIsDev(true);
 
   const store = new Store('photo-importer.settings.json');
@@ -105,6 +110,15 @@ export const OptionsForm: FC = (): JSX.Element => {
     () => disks?.filter((disk) => isRemovableDisk(disk)).map((disk) => ({ id: disk.mount_point, name: disk.name })),
     [disks],
   );
+
+  const handleSelectAll = () => {
+    setSelectedAll();
+  };
+
+  const handleSelectNone = () => {
+    console.info('handleSelectNone');
+    setSelectNone();
+  };
 
   const handleFocus = () => refetchDisks();
 
@@ -226,6 +240,20 @@ export const OptionsForm: FC = (): JSX.Element => {
                 </Checkbox>
               )}
             />
+          </Flex>
+        </Fieldset>
+
+        <Fieldset>
+          <legend>Actions</legend>
+
+          <Flex gap="size-100" direction="column">
+            <Button type="button" variant="secondary" onPress={handleSelectAll}>
+              Select All
+            </Button>
+
+            <Button type="button" variant="secondary" onPress={handleSelectNone}>
+              Select None
+            </Button>
           </Flex>
         </Fieldset>
       </Form>
