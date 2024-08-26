@@ -1,4 +1,9 @@
-export const subFolderOptions = [
+interface PickerOption {
+  id: string;
+  name: string;
+}
+
+export const subFolderOptions: PickerOption[] = [
   { id: 'none', name: 'None' },
   { id: 'custom', name: 'Custom Name' },
   { id: 'yyyymmdd', name: 'Shot Date (yyyymmdd)' }, // default?
@@ -7,4 +12,10 @@ export const subFolderOptions = [
   { id: 'ddmm', name: 'Shot Date (ddmm)' },
   { id: 'yyyyddmmm', name: 'Shot Date (yyyyddmmm)' },
   { id: 'ddmmmyyyy', name: 'Shot Date (ddmmmyyyy)' },
+];
+
+export const jpegPreviewSizes: PickerOption[] = [
+  { id: 'none', name: 'None' },
+  { id: 'medium', name: 'Medium' }, // default
+  { id: 'fullSize', name: 'Full Size' },
 ];

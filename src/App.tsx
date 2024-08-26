@@ -8,18 +8,25 @@ import { Store } from 'tauri-plugin-store-api';
 
 import { OptionsForm } from './components/OptionsForm/OptionsForm';
 import { SlideList } from './components/SlideList/SlideList';
-import { subFolderOptions } from './constants';
+import { jpegPreviewSizes, subFolderOptions } from './constants';
 import { usePhotosStore } from './stores/photos.store';
 import type { FileInfo } from './types/File';
 
 import './App.css';
 
 interface FormValues {
+  // options form
   sourceDisk: string;
   location: string;
   createSubFoldersPattern: string;
   convertToDng: boolean;
   deleteOriginal: boolean;
+
+  // dng settings form
+  jpegPreviewSize: string;
+  compressedLossless: boolean;
+  imageConversionMethod: string;
+  embedOriginalRawFile: boolean;
 }
 
 function App() {
@@ -31,6 +38,10 @@ function App() {
     setExtractedThumbnails: state.setExtractedThumbnails,
   }));
 
+  useEffect(() => {
+    console.info(store);
+  }, [store]);
+
   const methods = useForm<FormValues>({
     defaultValues: async () => ({
       sourceDisk: '',
@@ -38,6 +49,11 @@ function App() {
       createSubFoldersPattern: (await store.get('createSubFoldersPattern')) ?? subFolderOptions[2].id,
       convertToDng: (await store.get('convertToDng')) ?? false,
       deleteOriginal: (await store.get('deleteOriginal')) ?? false,
+
+      jpegPreviewSize: (await store.get('jpegPreviewSize')) ?? jpegPreviewSizes[2].id,
+      compressedLossless: (await store.get('compressedLossless')) ?? true,
+      imageConversionMethod: (await store.get('imageConversionMethod')) ?? 'preserve',
+      embedOriginalRawFile: (await store.get('embedOriginalRawFile')) ?? false,
     }),
   });
 

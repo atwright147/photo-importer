@@ -1,21 +1,51 @@
-import { AlertDialog, Button, Checkbox, DialogContainer, Flex, Form, Item, Picker, TextField } from '@adobe/react-spectrum';
+import {
+  AlertDialog,
+  Button,
+  ButtonGroup,
+  Checkbox,
+  Content,
+  Dialog,
+  DialogContainer,
+  Divider,
+  Flex,
+  Form,
+  Heading,
+  Item,
+  Picker,
+  Radio,
+  RadioGroup,
+  TextField,
+} from '@adobe/react-spectrum';
 import { DevTool } from '@hookform/devtools';
 import IconFolder from '@spectrum-icons/workflow/Folder';
 import { invoke } from '@tauri-apps/api';
 import { open } from '@tauri-apps/api/dialog';
-import { type FC, useEffect, useMemo, useState } from 'react';
+import { type FC, useEffect, useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { Store } from 'tauri-plugin-store-api';
 import type { Disk } from 'tauri-plugin-system-info-api';
 
 import { subFolderOptions } from '../../constants';
+import { jpegPreviewSizes } from '../../constants';
 import { useDisksQuery } from '../../hooks/useDisksQuery';
 import { useIsDev } from '../../hooks/useIsDev';
+import { useDialogsStore } from '../../stores/dialogs.store';
 import { usePhotosStore } from '../../stores/photos.store';
+import { handleFieldChangeSave } from '../../utils/handleFieldChangeSave';
 import { Fieldset } from '../form/Fieldset/Fieldset';
 
 export const OptionsForm: FC = (): JSX.Element => {
-  const [showDngConverterAlert, setShowDngConverterAlert] = useState(false);
+  const { addDialog, getDialog, setDialog } = useDialogsStore((store) => ({
+    addDialog: store.addDialog,
+    getDialog: store.getDialog,
+    setDialog: store.setDialog,
+  }));
+
+  useEffect(() => {
+    addDialog('dng-settings-form');
+    addDialog('dng-converter-alert');
+  }, []);
+
   const { handleSubmit, control, getValues, setValue } = useFormContext();
   const { setSelectedAll, setSelectNone } = usePhotosStore((store) => ({
     setSelectedAll: store.setSelectedAll,
@@ -62,26 +92,29 @@ export const OptionsForm: FC = (): JSX.Element => {
   };
 
   const handleDngSettings = () => {
-    console.info('handleDngSettings');
+    setDialog('dng-settings-form', true);
   };
 
   const handleCloseDngConverterAlert = () => {
-    setShowDngConverterAlert(false);
+    setDialog('dng-converter-alert', false);
+  };
+
+  const handleCloseDngSettingsFormDialog = () => {
+    setDialog('dng-settings-form', false);
   };
 
   const handleGetDngConverter = () => {
     invoke('open_url', { url: 'https://helpx.adobe.com/uk/camera-raw/using/adobe-dng-converter.html' });
   };
 
-  const handleFieldChange = async (value: string | number | boolean, name: string, onChangeFn: (value: string) => void): Promise<void> => {
-    console.info('handleFieldChange', { value, name });
-    onChangeFn(String(value));
-    try {
-      await store.set(name, value);
-      await store.save();
-    } catch (err) {
-      console.info(err);
-    }
+  const handleDngSettingsFormSave = async () => {
+    await store.set('jpegPreviewSize', getValues('jpegPreviewSize'));
+    await store.set('compressedLossless', getValues('compressedLossless'));
+    await store.set('imageConversionMethod', getValues('imageConversionMethod'));
+    await store.set('embedOriginalRawFile', getValues('embedOriginalRawFile'));
+    await store.save();
+
+    setDialog('dng-settings-form', false);
   };
 
   const handleDngConverterCheckboxChange = async (
@@ -90,10 +123,10 @@ export const OptionsForm: FC = (): JSX.Element => {
     onChangeFn: (value: string) => void,
   ): Promise<void> => {
     if (await !invoke<boolean>('is_dng_converter_available')) {
-      setShowDngConverterAlert(true);
+      setDialog('dng-converter-alert', true);
       return;
     }
-    await handleFieldChange(value, name, onChangeFn);
+    await handleFieldChangeSave(value, name, onChangeFn, store);
   };
 
   const { data: disks, isLoading: isLoadingDisks, refetch: refetchDisks } = useDisksQuery();
@@ -124,7 +157,7 @@ export const OptionsForm: FC = (): JSX.Element => {
 
   return (
     <>
-      <Form onSubmit={handleSubmit(onSubmit)}>
+      <Form onSubmit={() => handleSubmit(onSubmit)}>
         <Fieldset>
           <legend>Options</legend>
 
@@ -186,7 +219,7 @@ export const OptionsForm: FC = (): JSX.Element => {
                   label="Create Sub-Folders"
                   name={name}
                   items={subFolderOptions}
-                  onSelectionChange={(event) => handleFieldChange(event as string, name, onChange)}
+                  onSelectionChange={(event) => handleFieldChangeSave(event as string, name, onChange, store)}
                   selectedKey={value}
                   onBlur={onBlur}
                   ref={ref}
@@ -231,7 +264,7 @@ export const OptionsForm: FC = (): JSX.Element => {
               render={({ field: { name, value, onChange, onBlur, ref } }) => (
                 <Checkbox
                   name={name}
-                  onChange={(event) => handleFieldChange(event, name, onChange)}
+                  onChange={(event) => handleFieldChangeSave(event, name, onChange, store)}
                   onBlur={onBlur}
                   ref={ref}
                   isSelected={value}
@@ -259,7 +292,7 @@ export const OptionsForm: FC = (): JSX.Element => {
       </Form>
 
       <DialogContainer type="modal" onDismiss={handleCloseDngConverterAlert}>
-        {showDngConverterAlert && (
+        {getDialog('dng-converter-alert')?.open && (
           <AlertDialog
             variant="confirmation"
             title="Adobe DNG Converter not installed"
@@ -270,6 +303,68 @@ export const OptionsForm: FC = (): JSX.Element => {
           >
             Get Adobe DNG Converter?
           </AlertDialog>
+        )}
+      </DialogContainer>
+
+      <DialogContainer type="modal" onDismiss={handleCloseDngSettingsFormDialog}>
+        {getDialog('dng-settings-form')?.open && (
+          <Dialog>
+            <Heading>DNG Convert Settings</Heading>
+            <Divider />
+            <ButtonGroup>
+              <Button variant="secondary" onPress={() => setDialog('dng-settings-form', false)}>
+                Cancel
+              </Button>
+              <Button autoFocus variant="accent" onPress={handleDngSettingsFormSave}>
+                Save
+              </Button>
+            </ButtonGroup>
+            <Content>
+              <Flex direction="column">
+                <Controller
+                  name="jpegPreviewSize"
+                  control={control}
+                  render={({ field }) => (
+                    <Picker label="JPEG Preview Size" items={jpegPreviewSizes} onSelectionChange={field.onChange} selectedKey={field.value}>
+                      {(item) => (
+                        <Item key={item.id} textValue={item.name}>
+                          {item.name}
+                        </Item>
+                      )}
+                    </Picker>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="compressedLossless"
+                  render={({ field }) => (
+                    <Checkbox name={field.name} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} isSelected={field.value}>
+                      Compressed (lossless)
+                    </Checkbox>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="imageConversionMethod"
+                  render={({ field }) => (
+                    <RadioGroup label="Image Conversion Method" onChange={field.onChange} defaultValue={field.value}>
+                      <Radio value="preserve">Preserve Raw Image</Radio>
+                      <Radio value="convert">Convert to Linear Image</Radio>
+                    </RadioGroup>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="embedOriginalRawFile"
+                  render={({ field }) => (
+                    <Checkbox name={field.name} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} isSelected={field.value}>
+                      Embed Original Raw File
+                    </Checkbox>
+                  )}
+                />
+              </Flex>
+            </Content>
+          </Dialog>
         )}
       </DialogContainer>
 
