@@ -316,21 +316,30 @@ export const OptionsForm: FC = (): JSX.Element => {
                 Save
               </Button>
             </ButtonGroup>
+
             <Content>
-              <Flex direction="column">
-                <Controller
-                  name="jpegPreviewSize"
-                  control={control}
-                  render={({ field }) => (
-                    <Picker label="JPEG Preview Size" items={jpegPreviewSizes} onSelectionChange={field.onChange} selectedKey={field.value}>
-                      {(item) => (
-                        <Item key={item.id} textValue={item.name}>
-                          {item.name}
-                        </Item>
-                      )}
-                    </Picker>
-                  )}
-                />
+              <Flex direction="column" gap="size-200">
+                <Fieldset legend="Preview">
+                  <Controller
+                    name="jpegPreviewSize"
+                    control={control}
+                    render={({ field }) => (
+                      <Picker
+                        label="JPEG Preview Size"
+                        items={jpegPreviewSizes}
+                        onSelectionChange={field.onChange}
+                        selectedKey={field.value}
+                        width="100%"
+                      >
+                        {(item) => (
+                          <Item key={item.id} textValue={item.name}>
+                            {item.name}
+                          </Item>
+                        )}
+                      </Picker>
+                    )}
+                  />
+                </Fieldset>
                 <Controller
                   control={control}
                   name="compressedLossless"
@@ -340,16 +349,20 @@ export const OptionsForm: FC = (): JSX.Element => {
                     </Checkbox>
                   )}
                 />
-                <Controller
-                  control={control}
-                  name="imageConversionMethod"
-                  render={({ field }) => (
-                    <RadioGroup label="Image Conversion Method" onChange={field.onChange} defaultValue={field.value}>
-                      <Radio value="preserve">Preserve Raw Image</Radio>
-                      <Radio value="convert">Convert to Linear Image</Radio>
-                    </RadioGroup>
-                  )}
-                />
+                <Fieldset legend="Image Conversion Method">
+                  <Controller
+                    control={control}
+                    name="imageConversionMethod"
+                    render={({ field }) => (
+                      <RadioGroup onChange={field.onChange} defaultValue={field.value}>
+                        <Flex direction="column" marginStart="size-200">
+                          <Radio value="preserve">Preserve Raw Image</Radio>
+                          <Radio value="linear">Convert to Linear Image</Radio>
+                        </Flex>
+                      </RadioGroup>
+                    )}
+                  />
+                </Fieldset>
                 <Controller
                   control={control}
                   name="embedOriginalRawFile"

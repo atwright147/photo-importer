@@ -2,28 +2,28 @@ import { convertFileSrc } from '@tauri-apps/api/tauri';
 import type { FC } from 'react';
 
 import { usePhotosStore } from '../../stores/photos.store';
+import type { ExtractedThumbnails } from '../../types/ExtractedThumbnail';
 
 import styles from './Slide.module.scss';
 
 interface Props {
-  thumb: string;
-  hash: string;
+  item: ExtractedThumbnails;
   alt: string;
   title: string;
 }
 
-export const Slide: FC<Props> = ({ thumb, hash, alt, title }): JSX.Element => {
+export const Slide: FC<Props> = ({ item, alt, title }): JSX.Element => {
   const { isSelected, setSelected, removeSelected } = usePhotosStore((state) => ({
     isSelected: state.isSelected,
     setSelected: state.setSelected,
     removeSelected: state.removeSelected,
   }));
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>, hash: string): void => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>, item: ExtractedThumbnails): void => {
     if (event.target.checked) {
-      setSelected(hash);
+      setSelected(item);
     } else {
-      removeSelected(hash);
+      removeSelected(item.hash);
     }
   };
 
@@ -32,14 +32,14 @@ export const Slide: FC<Props> = ({ thumb, hash, alt, title }): JSX.Element => {
       <input
         type="checkbox"
         name="image"
-        value={thumb}
-        id={thumb}
-        checked={isSelected(hash)}
-        onChange={(event) => handleChange(event, hash)}
+        value={item.thumbnail_path}
+        id={item.thumbnail_path}
+        checked={isSelected(item.hash)}
+        onChange={(event) => handleChange(event, item)}
       />
-      <label className={styles.slide} htmlFor={thumb}>
+      <label className={styles.slide} htmlFor={item.thumbnail_path}>
         <figure className={styles.figure}>
-          <img src={convertFileSrc(thumb)} alt={alt} />
+          <img src={convertFileSrc(item.thumbnail_path)} alt={alt} />
           <figcaption className={styles.figcaption}>{title}</figcaption>
         </figure>
       </label>

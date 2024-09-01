@@ -13,6 +13,7 @@ import { usePhotosStore } from './stores/photos.store';
 import type { FileInfo } from './types/File';
 
 import './App.css';
+import { getDngArgs } from './utils/getDngArgs';
 
 interface FormValues {
   // options form
@@ -97,10 +98,11 @@ function App() {
     destination: string,
     useDngConverter: boolean,
     deleteOriginal: boolean,
+    args: string,
   ): Promise<void> => {
     console.info('copyOrConvertFile', sources, destination, useDngConverter);
     try {
-      await invoke('copy_or_convert', { sources, destination, useDngConverter, deleteOriginal });
+      await invoke('copy_or_convert', { sources, destination, useDngConverter, deleteOriginal, args });
       console.log('Operation successful');
     } catch (error) {
       console.error('Operation failed', error);
@@ -139,10 +141,16 @@ function App() {
                 type="button"
                 onPress={() =>
                   copyOrConvertFile(
-                    selected,
+                    selected.map((file) => file.original_path),
                     formValues.location ?? '',
                     formValues.convertToDng ?? false,
                     formValues.deleteOriginal ?? false,
+                    getDngArgs({
+                      jpegPreviewSize: formValues.jpegPreviewSize ?? '',
+                      compressedLossless: formValues.compressedLossless ?? false,
+                      imageConversionMethod: formValues.imageConversionMethod ?? '',
+                      embedOriginalRawFile: formValues.embedOriginalRawFile ?? false,
+                    }),
                   )
                 }
               >

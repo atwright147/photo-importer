@@ -12,10 +12,10 @@ export const subFolderOptions: PickerOption[] = [
   { id: 'ddmm', name: 'Shot Date (ddmm)' },
   { id: 'yyyyddmmm', name: 'Shot Date (yyyyddmmm)' },
   { id: 'ddmmmyyyy', name: 'Shot Date (ddmmmyyyy)' },
-];
+] as const;
 
 export const jpegPreviewSizes: PickerOption[] = [
   { id: 'none', name: 'None' },
   { id: 'medium', name: 'Medium' }, // default
   { id: 'fullSize', name: 'Full Size' },
-];
+] as const;

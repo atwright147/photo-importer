@@ -232,7 +232,13 @@ fn get_shot_date(file_path: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn copy_or_convert(sources: Vec<String>, destination: String, use_dng_converter: bool, delete_original: bool) -> Result<(), String> {
+fn copy_or_convert(
+  sources: Vec<String>,
+  destination: String,
+  use_dng_converter: bool,
+  delete_original: bool,
+  args: String,
+) -> Result<(), String> {
   for source in sources.iter() {
     let shot_date = get_shot_date(source)?;
 
@@ -242,13 +248,14 @@ fn copy_or_convert(sources: Vec<String>, destination: String, use_dng_converter:
 
     if use_dng_converter {
       // Use Adobe DNG Converter
-      let output = Command::new("/Applications/Adobe DNG Converter.app/Contents/MacOS/Adobe DNG Converter")
-        .arg("-mp")
-        .arg("-d")
-        .arg(&dest_dir)
-        .arg(source)
-        .output()
-        .map_err(|e| format!("Failed to execute DNG Converter: {}", e))?;
+      let mut cmd = Command::new("/Applications/Adobe DNG Converter.app/Contents/MacOS/Adobe DNG Converter");
+      cmd.arg("-mp");
+      cmd.arg("-d");
+      cmd.arg(&dest_dir);
+      cmd.arg(source);
+      cmd.arg(&args);
+      dbg!(&cmd);
+      let output = cmd.output().map_err(|e| format!("Failed to execute DNG Converter: {}", e))?;
 
       if !output.status.success() {
         return Err(format!("DNG Converter failed with status: {}", output.status));
