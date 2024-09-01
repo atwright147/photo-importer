@@ -96,13 +96,14 @@ function App() {
   const copyOrConvertFile = async (
     sources: string[],
     destination: string,
+    dateFormat: string,
     useDngConverter: boolean,
     deleteOriginal: boolean,
     args: string,
   ): Promise<void> => {
     console.info('copyOrConvertFile', sources, destination, useDngConverter);
     try {
-      await invoke('copy_or_convert', { sources, destination, useDngConverter, deleteOriginal, args });
+      await invoke('copy_or_convert', { sources, destination, dateFormat, useDngConverter, deleteOriginal, args });
       console.log('Operation successful');
     } catch (error) {
       console.error('Operation failed', error);
@@ -137,12 +138,14 @@ function App() {
                 Quit
               </Button>
               <Button
+                isDisabled={!selected.length}
                 variant="cta"
                 type="button"
                 onPress={() =>
                   copyOrConvertFile(
                     selected.map((file) => file.original_path),
                     formValues.location ?? '',
+                    formValues.createSubFoldersPattern ?? subFolderOptions[2].id,
                     formValues.convertToDng ?? false,
                     formValues.deleteOriginal ?? false,
                     getDngArgs({

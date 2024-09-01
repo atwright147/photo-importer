@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use chrono::NaiveDate;
 use serde::Serialize;
 use std::fs::{self, File};
 use std::io::{BufReader, Read};
@@ -49,6 +50,21 @@ fn is_allowed_extension(file_path: &str, allowed_extensions: &[&str]) -> bool {
   let file_extension = Path::new(file_path).extension().and_then(|ext| ext.to_str()).unwrap_or("");
   println!("File extension: {}", file_extension);
   allowed_extensions.contains(&file_extension.to_lowercase().as_str())
+}
+
+// Function to format the date folder based on the argument
+fn format_date_folder(shot_date: &str, format_arg: &str) -> String {
+  let date = NaiveDate::parse_from_str(shot_date, "%Y-%m-%d").unwrap();
+  match format_arg.to_lowercase().as_str() {
+    "custom" => String::from(""), // Use the original destination path for custom format
+    "yyyymmdd" => date.format("%Y%m%d").to_string(),
+    "yymmdd" => date.format("%y%m%d").to_string(),
+    "ddmmyy" => date.format("%d%m%y").to_string(),
+    "ddmm" => date.format("%d%m").to_string(),
+    "yyyyddmmm" => date.format("%Y%d%B").to_string(),
+    "ddmmmyyyy" => date.format("%d%B%Y").to_string(),
+    _ => date.format("%Y%m%d").to_string(), // Default to yyyyMMdd if format is invalid
+  }
 }
 
 #[tauri::command]
@@ -235,6 +251,7 @@ fn get_shot_date(file_path: &str) -> Result<String, String> {
 fn copy_or_convert(
   sources: Vec<String>,
   destination: String,
+  date_format: String,
   use_dng_converter: bool,
   delete_original: bool,
   args: String,
@@ -242,8 +259,8 @@ fn copy_or_convert(
   for source in sources.iter() {
     let shot_date = get_shot_date(source)?;
 
-    // Create the destination directory path
-    let dest_dir = format!("{}/{}", destination, shot_date);
+    // Format the destination directory path based on args
+    let dest_dir = format!("{}/{}", destination, format_date_folder(&shot_date, &date_format));
     fs::create_dir_all(&dest_dir).map_err(|e| format!("Failed to create destination directory: {}", e))?;
 
     if use_dng_converter {
