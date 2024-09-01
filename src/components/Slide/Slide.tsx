@@ -2,12 +2,12 @@ import { convertFileSrc } from '@tauri-apps/api/tauri';
 import type { FC } from 'react';
 
 import { usePhotosStore } from '../../stores/photos.store';
-import type { ExtractedThumbnails } from '../../types/ExtractedThumbnail';
+import type { ImageInfo } from '../../types/ImageInfo';
 
 import styles from './Slide.module.scss';
 
 interface Props {
-  item: ExtractedThumbnails;
+  item: ImageInfo;
   alt: string;
   title: string;
 }
@@ -19,7 +19,7 @@ export const Slide: FC<Props> = ({ item, alt, title }): JSX.Element => {
     removeSelected: state.removeSelected,
   }));
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>, item: ExtractedThumbnails): void => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>, item: ImageInfo): void => {
     if (event.target.checked) {
       setSelected(item);
     } else {

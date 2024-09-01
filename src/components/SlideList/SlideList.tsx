@@ -1,11 +1,11 @@
 import type { FC } from 'react';
-import type { ExtractedThumbnails } from '../../types/ExtractedThumbnail';
+import type { ImageInfo } from '../../types/ImageInfo';
 import { getFilename } from '../../utils/getFilename';
 import { Slide } from '../Slide/Slide';
 import styles from './SlideList.module.scss';
 
 interface Props {
-  extractedThumbnails: ExtractedThumbnails[];
+  extractedThumbnails: ImageInfo[];
 }
 
 export const SlideList: FC<Props> = ({ extractedThumbnails }): JSX.Element => {

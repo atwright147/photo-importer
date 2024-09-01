@@ -1,17 +1,17 @@
 import { create } from 'zustand';
 
-import type { ExtractedThumbnails } from '../types/ExtractedThumbnail';
+import type { ImageInfo } from '../types/ImageInfo';
 
 export interface State {
-  selected: ExtractedThumbnails[];
-  extractedThumbnails: ExtractedThumbnails[];
+  selected: ImageInfo[];
+  extractedThumbnails: ImageInfo[];
 
   isSelected: (id: string) => boolean;
-  setSelected: (items: ExtractedThumbnails | ExtractedThumbnails[]) => void;
+  setSelected: (items: ImageInfo | ImageInfo[]) => void;
   removeSelected: (ids: string | string[]) => void;
   setSelectedAll: () => void;
   setSelectNone: () => void;
-  setExtractedThumbnails: (thumbnails: ExtractedThumbnails[]) => void;
+  setExtractedThumbnails: (thumbnails: ImageInfo[]) => void;
 }
 
 export const usePhotosStore = create<State>()((set, get) => ({
