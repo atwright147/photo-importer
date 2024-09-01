@@ -234,8 +234,7 @@ export const OptionsForm: FC = (): JSX.Element => {
           </Flex>
         </Fieldset>
 
-        <Fieldset>
-          <legend>Advanced Options</legend>
+        <Fieldset legend="Advanced Options">
           <Flex gap="size-100" direction="column">
             <Flex>
               <Controller
@@ -276,9 +275,7 @@ export const OptionsForm: FC = (): JSX.Element => {
           </Flex>
         </Fieldset>
 
-        <Fieldset>
-          <legend>Actions</legend>
-
+        <Fieldset legend="Actions">
           <Flex gap="size-100" direction="column">
             <Button type="button" variant="secondary" onPress={handleSelectAll}>
               Select All
