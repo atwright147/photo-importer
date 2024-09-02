@@ -4,8 +4,8 @@ interface PickerOption {
 }
 
 export const subFolderOptions: PickerOption[] = [
-  { id: 'none', name: 'None' },
-  { id: 'custom', name: 'Custom Name' },
+  // { id: 'none', name: 'None' },
+  // { id: 'custom', name: 'Custom Name' },
   { id: 'yyyymmdd', name: 'Shot Date (yyyymmdd)' }, // default?
   { id: 'yymmdd', name: 'Shot Date (yymmdd)' },
   { id: 'ddmmyy', name: 'Shot Date (ddmmyy)' },
